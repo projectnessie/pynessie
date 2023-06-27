@@ -57,39 +57,60 @@ If you are proposing a feature:
 Get Started!
 ------------
 
-Ready to contribute? Here's how to set up `nessie` for local development.
+Ready to contribute? Here's how to set up `pynessie` for local development.
 
-1. Fork the `nessie` repo on GitHub.
+1. Fork the `pynessie` repo on GitHub.
 2. Clone your fork locally::
 
-    $ git clone git@github.com:your_name_here/nessie.git
+    git clone https://github.com/projectnessie/pynessie.git
 
 3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
 
-    $ mkvirtualenv pynessie
-    $ cd nessie/python
-    $ python setup.py develop
+    # Change directory to the root directory of your
+    # https://github.com/projectnessie/pynessie.git clone.
+    cd pynessie/
+    # setup the virtual environment (only needed once)
+    [ ! -d venv/ ] && virtualenv -p $(which python3) venv
+    # Run setup.py for pynessie
+    python setup.py develop
 
 4. Create a branch for local development::
 
-    $ git checkout -b name-of-your-bugfix-or-feature
+    git checkout -b name-of-your-bugfix-or-feature
 
    Now you can make your changes locally.
 
 5. When you're done making changes, check that your changes pass flake8 and the
    tests, including testing other Python versions with tox and all docs have been generated::
 
-    $ tox
+    tox
 
    To get flake8 and tox, just pip install them into your virtualenv.
 
 6. Commit your changes and push your branch to GitHub::
 
-    $ git add .
-    $ git commit -m "Your detailed description of your changes."
-    $ git push origin name-of-your-bugfix-or-feature
+    git add .
+    git commit -m "Your detailed description of your changes."
+    git push origin name-of-your-bugfix-or-feature
 
 7. Submit a pull request through the GitHub website.
+
+Code style
+----------
+
+Python code style issues can be fixed from the command line using::
+
+    # Change directory to the root directory of your
+    # https://github.com/projectnessie/pynessie.git clone.
+    cd pynessie/
+    # setup the virtual environment (only needed once)
+    [ ! -d venv/ ] && virtualenv -p $(which python3) venv
+    # activate the virtual environment
+    . venv/bin/activate
+    # Install or update the dependencies as usual
+    pip install -U -r requirements_lint.txt
+    # Run 'black' in the pynessie/ and tests/ subdirectoris
+    black pynessie tests
 
 Pull Request Guidelines
 -----------------------
