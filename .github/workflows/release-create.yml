@@ -1,0 +1,171 @@
+# Copyright (C) 2020 Dremio
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+# Projectnessie GitHub Release workflow
+
+# Creates a release tag for the current in-tree version from the main or another branch.
+
+# This workflow creates the git commits + git tag for a Nessie release.
+
+# When this workflow pushes the release tag (e.g. `nessie-0.5.1`), the `release-publish.yml`
+# workflow publishes the release artifacts.
+
+# Projectnessie really prefers a linear git history - aka no merges. PRs must not be merged
+# while the release workflow runs. In case the git history would not be linear, this workflow will
+# fail without having uploaded/pushed any release artifacts.
+
+# Secrets:
+#   NESSIE_BUILDER  GH access-token to push the release-commits+tag to the branch,
+#                   bypassing the required commit-hooks + review.
+
+name: Create Release
+
+on:
+  # Manually triggered
+  workflow_dispatch:
+    inputs:
+      releaseFromBranch:
+        description: 'The branch name the release from, leave empty to release from latest commit on main.'
+        required: false
+      bumpType:
+        description: 'Optional: bump patch, minor or major version (`patch`, `minor`, `major`). Default is `minor`.'
+        required: true
+        type: string
+        default: "minor"
+
+jobs:
+  create-release:
+    name: Create release
+    runs-on: ubuntu-22.04
+    if: github.repository_owner == 'projectnessie'
+    env:
+      RELEASE_FROM: ${{ github.event.inputs.releaseFromBranch }}
+      BUMP_TYPE: ${{ github.event.inputs.bumpType }}
+
+    steps:
+
+    ### BEGIN runner setup
+    - name: Checkout
+      uses: actions/checkout@v3.5.3
+      with:
+        ref: ${{ env.RELEASE_FROM }}
+        fetch-depth: '0'
+    - name: Setup Python
+      uses: ./.github/actions/dev-tool-python
+      with:
+        python-version: '3.8'
+    - name: Install Python dependencies
+      run: |
+        python3 -m pip install --upgrade pip
+        python3 -m pip install bump2version
+        # Remove the following, once https://github.com/c4urself/bump2version/issues/30 is fixed
+        # and the two workarounds below are removed.
+        python3 -m pip install -r python/requirements.txt
+    ### END runner setup
+
+    - name: Bump pynessie version
+      run: |
+        bump2version --no-commit --no-tag --allow-dirty ${{ github.event.inputs.bumpType }}
+        RELEASE_VERSION="$(cat setup.cfg | grep -e '^current_version' | cut -d= -f2 | sed 's/ //g')"
+        echo "RELEASE_VERSION=${RELEASE_VERSION}" >> ${GITHUB_ENV}
+
+    # Updates the python/HISTORY.rst file, takes the first four lines (the big heading),
+    # adds a heading with the version and a single item referencing the release notes on GitHub,
+    # followed by the Git change log for the python/ directory, finalized with the remainder of the
+    # previous python/HISTORY.rst file.
+    - name: Update HISTORY.rst file
+      run: |
+        head -4 python/HISTORY.rst > /tmp/HISTORY.rst
+        HEAD="${RELEASE_VERSION} ($(date '+%Y-%m-%d'))"
+        cat <<!  >> /tmp/HISTORY.rst
+        ${HEAD}
+        $(echo -n $HEAD | sed 's/./-/g')
+
+        * See release notes and changelog on GitHub: https://github.com/projectnessie/pynessie/releases/tag/nessie-${RELEASE_VERSION}
+        !
+
+        git log --perl-regexp --author '^(?!.*renovate|.*nessie-release-workflow).*$'\
+          --format='format:* %s' ${LAST_TAG}..HEAD python/ |\
+          >> /tmp/HISTORY.rst
+
+        tail +4 python/HISTORY.rst >> /tmp/HISTORY.rst
+
+        cp /tmp/HISTORY.rst python/HISTORY.rst
+        rm /tmp/HISTORY.rst
+
+    - name: Configure release-bot-user in git config
+      run: |
+        git config --global user.email "nessie-release-workflow-noreply@projectnessie.org"
+        git config --global user.name "Nessie Release Workflow [bot]"
+
+    # Record the release-version in git and add the git tag for the release.
+    - name: Record ${{ env.RELEASE_VERSION }} release in git
+      run: |
+        git commit -a -m "[release] release nessie-${RELEASE_VERSION}"
+        git tag -f -a -m "Release ${RELEASE_VERSION} from ${RELEASE_FROM} with bump-type ${BUMP_TYPE}" ${GIT_TAG}
+
+        cat <<! >> $GITHUB_STEP_SUMMARY
+        ## Release version information
+
+        Version information after the Git release tag:
+
+        | Name | Value |
+        | --- | --- |
+        | Nessie release version | ${RELEASE_VERSION}        |
+        | Git tag name           | \`${GIT_TAG}\`\           |
+        | Previous Git tag       | \`${LAST_TAG}\`           |
+        | Release from branch    | ${RELEASE_FROM}           |
+        | Bump type              | ${BUMP_TYPE}              |
+        | Release Git HEAD       | \`$(git rev-parse HEAD)\` |
+        !
+
+    # Bump to the next patch version
+    - name: Bump to next patch version
+      run: |
+        bump2version --no-commit --no-tag --allow-dirty patch
+        NEXT_VERSION="$(cat setup.cfg | grep -e '^current_version' | cut -d= -f2 | sed 's/ //g')"
+        echo "NEXT_VERSION=${NEXT_VERSION}" >> ${GITHUB_ENV}
+
+    - name: Next version information
+      run: |
+        cat <<! >> $GITHUB_STEP_SUMMARY
+        ## Next development version information
+
+        | Name | Value |
+        | --- | --- |
+        | Nessie development version | ${NEXT_VERSION}           |
+        | \`version.txt\` content    | \`$(cat version.txt)\`    |
+        | Git HEAD                   | \`$(git rev-parse HEAD)\` |
+        !
+
+      # Record the next development iteration in Git
+    - name: Record next development version in Git
+      run: git commit -a -m "[release] next development iteration ${NEXT_VERSION}"
+
+    # Push the 2 git commits and git tag. If this one fails, some other commit was pushed to the
+    # 'main' branch and break the linear history for the Nessie git repo.
+    # The `release-publish.yml` job will run when the release tag `nessie-x.y.z` has been pushed.
+    - name: Push tag + branch
+      run: |
+        # Push directly using the remote repo URL, which includes the secret so this job can push to the repo
+        UPSTREAM="https://${{ secrets.NESSIE_BUILDER }}@github.com/${GITHUB_REPOSITORY}.git"
+
+        # Move the default auth settings in ~/.gitconfig out of the way, so the git-push can use the token
+        git config --rename-section http.https://github.com/ http.https://save.github.com/
+
+        git push --no-verify "${UPSTREAM}" HEAD:${GITHUB_REF} ${GIT_TAG}
+
+        # Move the default auth settings in ~/.gitconfig back
+        git config --rename-section http.https://save.github.com/ http.https://github.com/

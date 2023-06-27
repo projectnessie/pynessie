@@ -1,0 +1,53 @@
+# Copyright (C) 2020 Dremio
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: CI build
+
+on:
+  push:
+    branches:
+      - main
+      - release-*
+  pull_request:
+
+# For the main branch: let all CI runs complete, one after the other. This has a couple advantages:
+# * Site deployments happen in commit-order
+# * Saved Gradle cache are persisted in commit-order
+# * (Potentially) more GH runners available for PRs
+concurrency:
+  # PRs: 1 CI run concurrently / older ones are cancelled
+  # main branch: 1 CI run concurrently / all commits / no cancellation
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+
+  python:
+    name: CI Python
+    runs-on: ubuntu-22.04
+    strategy:
+      # Python CI is relatively quick, don't parallelize to reduce number of concurrent jobs,
+      # respecting GitHub's concurrent jobs limit.
+      max-parallel: 1
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.7'] # 3.8 first, it has "all the tox envs"
+    steps:
+      - uses: actions/checkout@v3.5.3
+      - name: Setup Python
+        uses: ./.github/actions/dev-tool-python
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Test with tox
+        run: tox
+        working-directory: ./python

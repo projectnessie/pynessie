@@ -1,0 +1,20 @@
+name: 'Install Python'
+description: 'Setup Python runtime environment'
+inputs:
+  python-version:
+    required: true
+    default: '3.9'
+    description: 'The Python version, defaults to 3.9'
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python-version }}
+    - name: Install dependencies
+      shell: bash
+      run: |
+        python3 -m pip install --upgrade pip
+        python3 -m pip install tox tox-gh-actions
+      working-directory: ${{env.working-directory}}
