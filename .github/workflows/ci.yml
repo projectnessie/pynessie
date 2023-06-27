@@ -50,4 +50,3 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Test with tox
         run: tox
-        working-directory: ./python
