@@ -139,4 +139,6 @@ def _handle_normal_output(input_data: list, verbose: bool, default_branch: str, 
             additional_info,
         )
         output += click.style(next_row, fg="yellow") if x.name == default_branch else next_row
+    # remove latest newline
+    output = "".join(output.rsplit("\n", 1))
     return output
