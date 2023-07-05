@@ -35,7 +35,7 @@ module = [
     'confuse.*',
     'marshmallow_oneofschema.*',
     'requests_aws4auth.*',
-    'vcr.*',
     'assertpy.*',
+    'testcontainers.*',
 ]
 ignore_missing_imports = true

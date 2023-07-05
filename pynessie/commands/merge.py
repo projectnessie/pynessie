@@ -82,17 +82,19 @@ def merge(ctx: ContextObject, ref: str, force: bool, expected_hash: str, hash_on
     else:
         if ctx.json:
             click.echo(MergeResponseSchema().dumps(merge_response))
-        else:
-            commits = merge_response.source_commits
+        elif merge_response.was_applied:
             click.echo(
-                "The following {N} commits were merged onto {target_branch}:".format(
-                    N=len(commits), target_branch=merge_response.target_branch
-                )
+                f"Merged {from_ref} onto {merge_response.target_branch} (was on {merge_response.effective_target_hash} before merge)"
             )
-            for commit in commits:
-                commit_meta = commit.commit_meta
-                click.echo(commit_meta.hash_ + ' "' + commit_meta.message + '" ' + commit_meta.committer)
+            if merge_response.common_ancestor:
+                click.echo(f"Identified merge base commit {merge_response.common_ancestor}")
             if merge_response.resultant_target_hash:
-                click.echo(
-                    "Resultant hash on {} after merge: {}".format(merge_response.target_branch, merge_response.resultant_target_hash)
-                )
+                click.echo(f"Resultant hash on {merge_response.target_branch} after merge: {merge_response.resultant_target_hash}")
+        else:
+            click.echo(
+                f"Nothing merged from {from_ref} onto {merge_response.target_branch} (still on {merge_response.effective_target_hash})"
+            )
+            if merge_response.common_ancestor:
+                click.echo(f"Identified merge base commit {merge_response.common_ancestor}")
+            if merge_response.resultant_target_hash:
+                click.echo(f"Current, unchanged hash on {merge_response.target_branch} after merge: {merge_response.resultant_target_hash}")

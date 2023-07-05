@@ -45,7 +45,7 @@ from .conftest import (
 )
 
 
-@pytest.mark.vcr
+@pytest.mark.nessie
 def test_command_line_interface() -> None:
     """Test the CLI."""
     assert "Usage: nessie" in execute_cli_command([])
@@ -75,7 +75,7 @@ def test_set_unset() -> None:
     assert "123" not in execute_cli_command(["config", "--list"])
 
 
-@pytest.mark.vcr
+@pytest.mark.nessie
 def test_remote() -> None:
     """Test setting and viewing remote."""
     execute_cli_command(["remote", "add", "http://test.url"])
@@ -89,11 +89,11 @@ def test_remote() -> None:
     assert isinstance(result.exception, confuse.exceptions.ConfigTypeError)
 
 
-def _new_table(table_id: str) -> IcebergTable:
-    return IcebergTable(table_id, "/a/b/c", 42, 43, 44, 45)
+def _new_table() -> IcebergTable:
+    return IcebergTable(None, "/a/b/c", 42, 43, 44, 45)
 
 
-@pytest.mark.vcr
+@pytest.mark.nessie
 def test_log() -> None:
     """Test log and log filtering."""
     main_hash = ref_hash("main")
@@ -101,12 +101,13 @@ def test_log() -> None:
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
     assert len(logs) == 0
     execute_cli_command(["branch", "dev_test_log"])
-    table = _new_table("test_log_dev")
-    make_commit("log.foo.dev", table, "dev_test_log", author="nessie_user1")
-    table = _new_table("test_log")
-    make_commit("log.foo.bar", table, "main", author="nessie_user1", message="commit to main")
-    tables = ContentSchema().loads(execute_cli_command(["--json", "content", "view", "log.foo.bar"]), many=True)
+    table = _new_table()
+    make_commit("log_foo_dev", table, "dev_test_log", author="nessie_user1")
+    table = _new_table()
+    make_commit("log_foo_bar", table, "main", author="nessie_user1", message="commit to main")
+    tables = ContentSchema().loads(execute_cli_command(["--json", "content", "view", "log_foo_bar"]), many=True)
     assert len(tables) == 1
+    table.id = tables[0].id
     assert tables[0] == table
 
     ext_logs: List[LogEntry] = LogEntrySchema().loads(execute_cli_command(["--json", "log", "-x"]), many=True)
@@ -116,7 +117,7 @@ def test_log() -> None:
         and ext_logs[0].commit_meta.author == "nessie_user1"
         and ext_logs[0].parent_commit_hash is not None
         and len(ext_logs[0].operations) == 1
-        and ext_logs[0].operations[0].key == ContentKey.from_path_string("log.foo.bar")
+        and ext_logs[0].operations[0].key == ContentKey.from_path_string("log_foo_bar")
     )
 
     simple_logs: List[CommitMeta] = CommitMetaSchema().loads(execute_cli_command(["--json", "log"]), many=True)
@@ -141,7 +142,7 @@ def test_log() -> None:
             "--json",
             "content",
             "commit",
-            "log.foo.bar",
+            "log_foo_bar",
             "-R",
             "--ref",
             "main",
@@ -189,7 +190,7 @@ def test_log() -> None:
     execute_cli_command(["--json", "log", f"main@{main_hash}", "--revision-range", logs[0]["hash"]], ret_val=2)
 
 
-@pytest.mark.vcr
+@pytest.mark.nessie
 def test_branch() -> None:
     """Test create and assign refs."""
     main_hash = ref_hash("main")
@@ -213,8 +214,8 @@ def test_branch() -> None:
     references = simplejson.loads(execute_cli_command(["--json", "branch", "-l", "foo"]))
     assert len(references) == 0
 
-    table = _new_table("test_branch_metadata")
-    make_commit("test.branch.metadata", table, "dev", author="nessie_user1")
+    table = _new_table()
+    make_commit("test_branch_metadata", table, "dev", author="nessie_user1")
 
     branch = ReferenceSchema().loads(execute_cli_command(["--json", "branch", "-l", "dev", "--extended"]))
     ref_metadata = branch.metadata
@@ -235,7 +236,7 @@ def test_branch() -> None:
     assert len(references) == 1
 
 
-@pytest.mark.vcr
+@pytest.mark.nessie
 def test_tag() -> None:
     """Test create and assign refs."""
     main_hash = ref_hash("main")
@@ -270,8 +271,8 @@ def test_tag() -> None:
     assert tags["v1.0"] == branches["main"]
 
     execute_cli_command(["branch", "metadata_branch", "main"])
-    table = _new_table("test_tag_metadata")
-    make_commit("test.tag.metadata", table, "metadata_branch", author="nessie_user1")
+    table = _new_table()
+    make_commit("test_tag_metadata", table, "metadata_branch", author="nessie_user1")
     execute_cli_command(["tag", "metadata_tag", "metadata_branch"])
     ref = ReferenceSchema().loads(execute_cli_command(["--json", "tag", "-l", "metadata_tag", "--extended"]))
     ref_metadata = ref.metadata
@@ -283,11 +284,11 @@ def test_tag() -> None:
     assert_that(ref_metadata.commit_meta_of_head).is_not_none()
 
 
-@pytest.mark.vcr
+@pytest.mark.nessie
 def test_assign() -> None:
     """Test assign operation."""
     execute_cli_command(["branch", "dev"])
-    make_commit("assign.foo.bar", _new_table("test_assign"), "dev")
+    make_commit("assign_foo_bar", _new_table(), "dev")
     execute_cli_command(["branch", "main", "dev", "--force"])
     branches = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
     refs = {i.name: i.hash_ for i in branches}
@@ -300,47 +301,55 @@ def test_assign() -> None:
     assert tags["v1.0"] == refs["dev"]
 
 
-@pytest.mark.vcr
+@pytest.mark.nessie
 def test_merge() -> None:
     """Test merge operation."""
+    make_commit("initial_commit", _new_table(), "main", message="Initial commit")
+    initial_hash = ref_hash("main")
     execute_cli_command(["branch", "dev"])
-    make_commit("merge.foo.bar", _new_table("test_merge"), "dev")
+    make_commit("merge_foo_bar", _new_table(), "dev")
     main_hash = ref_hash("main")
     dev_hash = ref_hash("dev")
 
-    # Passing detached commit-id plus a _different_ hash-on-ref --> error
-    execute_cli_command(["merge", f"dev@{dev_hash}", "-c", main_hash, "-o", main_hash], ret_val=1)
     merge_output = execute_cli_command(["merge", "dev", "-c", main_hash])
 
     branches = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
     refs = {i.name: i.hash_ for i in branches}
 
     expected_output_list = [
-        "The following 1 commits were merged onto main:",
-        '{} "test message" '.format(refs["dev"]),
-        "Resultant hash on main after merge: {}".format(refs["main"]),
+        f"Merged dev onto main (was on {main_hash} before merge)",
+        f"Identified merge base commit {initial_hash}",
+        f"Resultant hash on main after merge: {refs['main']}",
     ]
     assert_that(merge_output.splitlines()).is_equal_to(expected_output_list)
 
-    # if we try to merge again from dev to main we get an error
-    # this is because there is now a conflict as the same commit exists on both branches
-    merge_error = execute_cli_command(["merge", "dev", "-c", refs["main"]], ret_val=1)
-    assert "Client Error Conflict: The following keys have been changed in conflict:" in merge_error
+    print(merge_output.splitlines())
+
+    # If we try to merge again from dev to main we get an error.
+    # This is because there is nothing more to merge.
+    merge_output = execute_cli_command(["merge", "dev", "-c", refs["main"]])
+    expected_output_list = [
+        f"Nothing merged from dev onto main (still on {refs['main']})",
+        f"Identified merge base commit {dev_hash}",
+        f"Current, unchanged hash on main after merge: {refs['main']}",
+    ]
+    assert_that(merge_output.splitlines()).is_equal_to(expected_output_list)
 
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
     # we don't check for equality of hashes here because a merge
     # produces a different commit hash on the target branch
-    assert len(logs) == 1
-    assert_that(logs[0]["message"]).is_equal_to("test message")
+    assert_that(logs).is_length(2)
+    assert_that(logs[0]["message"]).starts_with("Merged dev at ")
     logs = simplejson.loads(execute_cli_command(["--json", "log", "dev"]))
-    assert len(logs) == 1
+    assert_that(logs).is_length(2)
 
 
-@pytest.mark.vcr
+@pytest.mark.nessie
 def test_merge_json() -> None:
     """Test merge operation."""
+    make_commit("initial_commit", _new_table(), "main", message="Initial commit")
     execute_cli_command(["branch", "dev"])
-    make_commit("merge.foo.bar", _new_table("test_merge"), "dev")
+    make_commit("merge_foo_bar", _new_table(), "dev")
     main_hash = ref_hash("main")
     dev_hash = ref_hash("dev")
 
@@ -354,41 +363,24 @@ def test_merge_json() -> None:
     assert_that(merge_response.target_branch).is_equal_to("main")
     assert_that(merge_response.expected_hash).is_equal_to(main_hash)
     assert_that(merge_response.effective_target_hash).is_equal_to(main_hash)
-    assert len(merge_response.source_commits) == 1
-    assert len(merge_response.details) == 1
-    assert_that(merge_response.details[0].source_commits[0]).is_equal_to(dev_hash)
+    assert_that(merge_response.details).is_length(1)
 
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
     # we don't check for equality of hashes here because a merge
     # produces a different commit hash on the target branch
-    assert len(logs) == 1
-    assert_that(logs[0]["message"]).is_equal_to("test message")
+    assert_that(logs).is_length(2)
+    assert_that(logs[0]["message"]).starts_with("Merged dev at ")
     logs = simplejson.loads(execute_cli_command(["--json", "log", "dev"]))
-    assert len(logs) == 1
+    assert_that(logs).is_length(2)
 
 
-@pytest.mark.vcr
-def test_merge_legacy() -> None:
-    """Test merge operation."""
-    execute_cli_command(["branch", "dev"])
-    make_commit("merge.foo.bar", _new_table("test_merge"), "dev")
-    main_hash = ref_hash("main")
-
-    merge_output = execute_cli_command(["merge", "dev", "-c", main_hash])
-    assert_that(merge_output).is_equal_to("Merge succeeded but legacy server did not respond with additional details.\n")
-
-    execute_cli_command(["branch", "devjson"])
-    make_commit("merge.foo.far", _new_table("test_merge_json"), "devjson")
-
-    merge_output = execute_cli_command(["--json", "merge", "-f", "-b", "main", "devjson"])
-    assert_that(merge_output).is_equal_to('{"_cli_hint": "Merge succeeded but legacy server did not respond with additional details."}\n')
-
-
-@pytest.mark.vcr
+@pytest.mark.nessie
 def test_merge_detached() -> None:
     """Test merge operation."""
+    make_commit("initial_commit", _new_table(), "main", message="Initial commit")
+    initial_hash = ref_hash("main")
     execute_cli_command(["branch", "dev"])
-    make_commit("merge.foo.bar", _new_table("test_merge_detached"), "dev")
+    make_commit("merge_foo_bar", _new_table(), "dev")
     main_hash = ref_hash("main")
     dev_hash = ref_hash("dev")
 
@@ -401,26 +393,27 @@ def test_merge_detached() -> None:
     refs = {i.name: i.hash_ for i in branches}
 
     expected_output_list = [
-        "The following 1 commits were merged onto main:",
-        '{} "test message" '.format(refs["dev"]),
-        "Resultant hash on main after merge: {}".format(refs["main"]),
+        f"Merged dev onto main (was on {main_hash} before merge)",
+        f"Identified merge base commit {initial_hash}",
+        f"Resultant hash on main after merge: {refs['main']}",
     ]
     assert_that(merge_output.splitlines()).is_equal_to(expected_output_list)
 
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
     # we don't check for equality of hashes here because a merge
     # produces a different commit hash on the target branch
-    assert len(logs) == 1
-    assert_that(logs[0]["message"]).is_equal_to("test message")
+    assert_that(logs).is_length(2)
+    assert_that(logs[0]["message"]).starts_with("Merged dev at ")
     logs = simplejson.loads(execute_cli_command(["--json", "log", "dev"]))
-    assert len(logs) == 1
+    assert_that(logs).is_length(2)
 
 
-@pytest.mark.vcr
+@pytest.mark.nessie
 def test_merge_detached_json() -> None:
     """Test merge operation."""
+    make_commit("initial_commit", _new_table(), "main", message="Initial commit")
     execute_cli_command(["branch", "dev"])
-    make_commit("merge.foo.bar", _new_table("test_merge_detached"), "dev")
+    make_commit("merge_foo_bar", _new_table(), "dev")
     main_hash = ref_hash("main")
     dev_hash = ref_hash("dev")
 
@@ -434,38 +427,36 @@ def test_merge_detached_json() -> None:
     assert_that(merge_response.target_branch).is_equal_to("main")
     assert_that(merge_response.expected_hash).is_equal_to(main_hash)
     assert_that(merge_response.effective_target_hash).is_equal_to(main_hash)
-    assert len(merge_response.source_commits) == 1
-    assert len(merge_response.details) == 1
-    assert_that(merge_response.details[0].source_commits[0]).is_equal_to(dev_hash)
+    assert_that(merge_response.details).is_length(1)
 
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
     # we don't check for equality of hashes here because a merge
     # produces a different commit hash on the target branch
-    assert len(logs) == 1
-    assert_that(logs[0]["message"]).is_equal_to("test message")
+    assert_that(logs).is_length(2)
+    assert_that(logs[0]["message"]).starts_with("Merged DETACHED at ")
     logs = simplejson.loads(execute_cli_command(["--json", "log", "dev"]))
-    assert len(logs) == 1
+    assert_that(logs).is_length(2)
 
 
-@pytest.mark.vcr
+@pytest.mark.nessie
 def test_transplant() -> None:
     """Test transplant operation."""
     execute_cli_command(["branch", "dev"])
-    make_commit("transplant.foo.bar", _new_table("test_transplant_1"), "dev", message="commit 1")
-    make_commit("bar.bar", _new_table("test_transplant_2"), "dev", message="commit 2")
-    make_commit("foo.baz", _new_table("test_transplant_3"), "dev", message="commit 3")
+    make_commit("transplant_foo_bar", _new_table(), "dev", message="commit 1")
+    make_commit("bar_bar", _new_table(), "dev", message="commit 2")
+    make_commit("foo_baz", _new_table(), "dev", message="commit 3")
     main_hash = ref_hash("main")
     logs = simplejson.loads(execute_cli_command(["--json", "log", "dev"]))
     first_hash = [i["hash"] for i in logs]
     execute_cli_command(["cherry-pick", "-c", main_hash, "-s", "dev", first_hash[1], first_hash[0]])
 
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
-    assert len(logs) == 2  # two commits were transplanted into an empty `main`
+    assert_that(logs).is_length(2)  # two commits were transplanted into an empty `main`
     assert_that(logs[0]["message"]).is_equal_to("commit 3")
     assert_that(logs[1]["message"]).is_equal_to("commit 2")
 
 
-@pytest.mark.vcr
+@pytest.mark.nessie
 def test_diff() -> None:
     """Test log and log filtering."""
     diff = DiffResponseSchema().loads(execute_cli_command(["--json", "diff", "main", "main"]))
@@ -474,8 +465,8 @@ def test_diff() -> None:
     assert_that(diff.diffs).is_empty()
     branch = "dev_test_diff"
     execute_cli_command(["branch", branch])
-    table = _new_table(branch)
-    content_key = "diff.foo.dev"
+    table = _new_table()
+    content_key = "diff_foo_dev"
     make_commit(content_key, table, branch, author="nessie_user1")
     branch_hash = ref_hash(branch)
 
@@ -485,6 +476,8 @@ def test_diff() -> None:
     diff_entry = diff.diffs[0]
     assert_that(diff_entry.content_key).is_equal_to(ContentKey.from_path_string(content_key))
     assert_that(diff_entry.from_content).is_none()
+    assert_that(diff_entry.to_content).is_not_none()
+    table.id = diff_entry.to_content.id
     assert_that(diff_entry.to_content).is_equal_to(table)
 
     diff_detached = DiffResponseSchema().loads(execute_cli_command(["--json", "diff", main_hash, branch_hash]))
