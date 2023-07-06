@@ -30,7 +30,6 @@ from pynessie.commands import (
     diff,
     log,
     merge,
-    reflog,
     remote,
     tag,
 )
@@ -78,7 +77,6 @@ cli.add_command(merge)
 cli.add_command(cherry_pick)
 cli.add_command(content)
 cli.add_command(diff)
-cli.add_command(reflog)
 
 
 if __name__ == "__main__":

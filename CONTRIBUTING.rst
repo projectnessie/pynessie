@@ -15,7 +15,7 @@ Types of Contributions
 Report Bugs
 ~~~~~~~~~~~
 
-Report bugs at https://github.com/projectnessie/nessie/issues.
+Report bugs at https://github.com/projectnessie/pynessie/issues.
 
 If you are reporting a bug, please include:
 
@@ -45,7 +45,7 @@ articles, and such.
 Submit Feedback
 ~~~~~~~~~~~~~~~
 
-The best way to send feedback is to file an issue at https://github.com/projectnessie/nessie/issues.
+The best way to send feedback is to file an issue at https://github.com/projectnessie/pynessie/issues.
 
 If you are proposing a feature:
 
@@ -135,16 +135,3 @@ $ pytest tests.test_pynessie
 To fix code style issues::
 
 $ black pynessie/ tests/
-
-Deploying
----------
-
-A reminder for the maintainers on how to deploy.
-Make sure all your changes are committed (including an entry in HISTORY.rst).
-Then run::
-
-$ bump2version patch # possible: major / minor / patch
-$ git push
-$ git push --tags
-
-Travis will then deploy to PyPI if tests pass.
