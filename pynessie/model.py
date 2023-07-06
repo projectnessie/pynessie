@@ -539,6 +539,8 @@ class DiffResponse:
     """Dataclass for a DiffResponse."""
 
     diffs: List[DiffEntry] = desert.ib(fields.List(fields.Nested(DiffEntrySchema(), data_key="diffs")))
+    has_more: bool = attr.ib(default=False, metadata=desert.metadata(fields.Bool(allow_none=True, data_key="hasMore")))
+    token: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
 
 
 DiffResponseSchema = desert.schema_class(DiffResponse)
