@@ -33,7 +33,6 @@ from pynessie.client._endpoints import (
     get_diff,
     get_reference,
     list_logs,
-    list_reflog,
     list_tables,
     merge,
 )
@@ -64,9 +63,6 @@ from pynessie.model import (
     ReferenceSchema,
     ReferencesResponse,
     ReferencesResponseSchema,
-    ReflogEntry,
-    ReflogResponse,
-    ReflogResponseSchema,
     Tag,
     Transplant,
     TransplantSchema,
@@ -359,34 +355,3 @@ class NessieClient:
         return DiffResponseSchema().load(
             get_diff(self._base_url, self._auth, from_ref, to_ref, from_hash_on_ref, to_hash_on_ref, self._ssl_verify)
         )
-
-    def get_reflog(self, max_records: Optional[int] = None, **query_params: Any) -> Generator[ReflogEntry, Any, None]:
-        """Fetch all reflog starting from the head or from the specified range."""
-        page_token = query_params.get("pageToken", None)
-
-        def fetch_reflog(fetch_max: Optional[int], token: Optional[str] = page_token) -> ReflogResponse:
-            if token:
-                query_params["pageToken"] = token
-
-            fetched_reflog = list_reflog(
-                base_url=self._base_url, auth=self._auth, ssl_verify=self._ssl_verify, max_records=fetch_max, **query_params
-            )
-            parsed_logs = ReflogResponseSchema().load(fetched_reflog)
-            return parsed_logs
-
-        reflog_response = fetch_reflog(fetch_max=max_records)
-
-        def generator(logs: ReflogResponse, fetch_max: Optional[int]) -> Generator[ReflogEntry, Any, None]:
-            while True:
-                for log in logs.log_entries:
-                    yield log
-                    if fetch_max is not None:
-                        fetch_max -= 1
-                        if fetch_max <= 0:
-                            # yield only the required number of results, if server returns more records than expected.
-                            break
-                if not logs.has_more or (fetch_max is not None and fetch_max <= 0):
-                    break
-                logs = fetch_reflog(fetch_max=fetch_max, token=logs.token)
-
-        return generator(reflog_response, max_records)

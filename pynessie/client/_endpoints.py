@@ -403,25 +403,3 @@ def get_diff(
         dict,
         _get(f"{base_url}/diffs/{from_ref}{from_hash_on_ref_asterisk}...{to_ref}{to_hash_on_ref_asterisk}", auth, ssl_verify=ssl_verify),
     )
-
-
-def list_reflog(
-    base_url: str,
-    auth: Optional[AuthBase],
-    ssl_verify: bool = True,
-    max_records: Optional[int] = None,
-    **query_params: Any,
-) -> dict:
-    """Fetch a list of all reflog from a head or from a specified range.
-
-    :param base_url: base Nessie url
-    :param auth: Authentication settings
-    :param max_records: maximum number of entries to return
-    :param ssl_verify: ignore ssl errors if False
-    :param query_params: All of the args used to filter the log
-    :return: json dict of Nessie logs
-    """
-    params = query_params
-    if max_records:
-        params["maxRecords"] = max_records
-    return cast(dict, _get(f"{base_url}/reflogs", auth, ssl_verify=ssl_verify, params=query_params))

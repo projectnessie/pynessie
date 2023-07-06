@@ -22,8 +22,7 @@ from pynessie.commands.content import content
 from pynessie.commands.diff import diff
 from pynessie.commands.log import log
 from pynessie.commands.merge import merge
-from pynessie.commands.reflog import reflog
 from pynessie.commands.remote import remote
 from pynessie.commands.tag import tag
 
-__all__ = ["remote", "tag", "branch_", "cherry_pick", "config", "log", "merge", "content", "diff", "reflog"]
+__all__ = ["remote", "tag", "branch_", "cherry_pick", "config", "log", "merge", "content", "diff"]
