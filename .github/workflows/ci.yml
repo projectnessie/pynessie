@@ -40,8 +40,6 @@ jobs:
     env:
       NESSIE_TEST_IMAGE: 'ghcr.io/projectnessie/nessie:latest'
     strategy:
-      # Python CI is relatively quick, don't parallelize to reduce number of concurrent jobs,
-      # respecting GitHub's concurrent jobs limit.
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11'] # 3.8 first, it has "all the tox envs"
     steps:
