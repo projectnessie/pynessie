@@ -213,7 +213,6 @@ def test_content_commit_with_edited_data() -> None:
     )
     assert_that(tables).is_length(1)
 
-    # If we have the same content data, we expect no commit to happen
     make_commit(table_id, iceberg_table, branch)
     logs = simplejson.loads(execute_cli_command(["--json", "log", branch]))
 
