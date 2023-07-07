@@ -323,8 +323,6 @@ def test_merge() -> None:
     ]
     assert_that(merge_output.splitlines()).is_equal_to(expected_output_list)
 
-    print(merge_output.splitlines())
-
     # If we try to merge again from dev to main we get an error.
     # This is because there is nothing more to merge.
     merge_output = execute_cli_command(["merge", "dev", "-c", refs["main"]])
@@ -448,7 +446,16 @@ def test_transplant() -> None:
     main_hash = ref_hash("main")
     logs = simplejson.loads(execute_cli_command(["--json", "log", "dev"]))
     first_hash = [i["hash"] for i in logs]
-    execute_cli_command(["cherry-pick", "-c", main_hash, "-s", "dev", first_hash[1], first_hash[0]])
+    merge_output = execute_cli_command(["cherry-pick", "-c", main_hash, "-s", "dev", first_hash[1], first_hash[0]])
+
+    branches = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
+    refs = {i.name: i.hash_ for i in branches}
+
+    expected_output_list = [
+        f"Cherry-picked onto main (was on {main_hash} before)",
+        f"Resultant hash on main after cherry-pick: {refs['main']}",
+    ]
+    assert_that(merge_output.splitlines()).is_equal_to(expected_output_list)
 
     logs = simplejson.loads(execute_cli_command(["--json", "log"]))
     assert_that(logs).is_length(2)  # two commits were transplanted into an empty `main`
