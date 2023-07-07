@@ -22,6 +22,7 @@ from click import UsageError
 
 from pynessie.cli_common_context import ContextObject, MutuallyExclusiveOption
 from pynessie.decorators import error_handler, pass_client, validate_reference
+from pynessie.model import MergeResponseSchema
 
 
 @click.command("cherry-pick")
@@ -67,5 +68,16 @@ def cherry_pick(ctx: ContextObject, ref: str, force: bool, expected_hash: str, s
             """Either condition or force must be set. Condition should be set to a valid hash for concurrency
             control or force to ignore current state of Nessie Store."""
         )
-    ctx.nessie.cherry_pick(ref, source_ref, expected_hash, *hashes)
-    click.echo()
+    merge_response = ctx.nessie.cherry_pick(ref, source_ref, expected_hash, *hashes)
+    if ctx.json:
+        click.echo(MergeResponseSchema().dumps(merge_response))
+    elif merge_response.was_applied:
+        click.echo(f"Cherry-picked onto {merge_response.target_branch} (was on {merge_response.effective_target_hash} before)")
+        if merge_response.resultant_target_hash:
+            click.echo(f"Resultant hash on {merge_response.target_branch} after cherry-pick: {merge_response.resultant_target_hash}")
+    else:
+        click.echo(f"Nothing cherry-picked onto {merge_response.target_branch} (still on {merge_response.effective_target_hash})")
+        if merge_response.resultant_target_hash:
+            click.echo(
+                f"Current, unchanged hash on {merge_response.target_branch} after cherry-pick: {merge_response.resultant_target_hash}"
+            )

@@ -20,12 +20,13 @@ from pynessie.error import NessieConflictException
 from pynessie.model import Branch, Entries
 
 
-@pytest.mark.vcr
+@pytest.mark.nessieserver
 def test_client_interface_e2e() -> None:
     """Test client object against live server."""
     client = init()
     assert isinstance(client.get_base_url(), str)
-    assert client.get_base_url() == "http://localhost:19120/api/v1"
+    assert client.get_base_url().startswith("http://localhost:")
+    assert client.get_base_url().endswith("/api/v1")
     references = client.list_references().references
     assert len(references) == 1
     assert references[0] == Branch("main", references[0].hash_)

@@ -15,8 +15,6 @@
 
 """merge CLI command."""
 
-import json
-
 import click
 from click import UsageError
 
@@ -72,27 +70,17 @@ def merge(ctx: ContextObject, ref: str, force: bool, expected_hash: str, hash_on
             control or force to ignore current state of Nessie Store."""
         )
     merge_response = ctx.nessie.merge(from_ref, ref, hash_on_ref, expected_hash)
-    if merge_response is None:
-        message = "Merge succeeded but legacy server did not respond with additional details."
-        if ctx.json:
-            hint = {"_cli_hint": message}
-            click.echo(json.dumps(hint))
-        else:
-            click.echo(message)
+    if ctx.json:
+        click.echo(MergeResponseSchema().dumps(merge_response))
+    elif merge_response.was_applied:
+        click.echo(f"Merged {from_ref} onto {merge_response.target_branch} (was on {merge_response.effective_target_hash} before merge)")
+        if merge_response.common_ancestor:
+            click.echo(f"Identified merge base commit {merge_response.common_ancestor}")
+        if merge_response.resultant_target_hash:
+            click.echo(f"Resultant hash on {merge_response.target_branch} after merge: {merge_response.resultant_target_hash}")
     else:
-        if ctx.json:
-            click.echo(MergeResponseSchema().dumps(merge_response))
-        else:
-            commits = merge_response.source_commits
-            click.echo(
-                "The following {N} commits were merged onto {target_branch}:".format(
-                    N=len(commits), target_branch=merge_response.target_branch
-                )
-            )
-            for commit in commits:
-                commit_meta = commit.commit_meta
-                click.echo(commit_meta.hash_ + ' "' + commit_meta.message + '" ' + commit_meta.committer)
-            if merge_response.resultant_target_hash:
-                click.echo(
-                    "Resultant hash on {} after merge: {}".format(merge_response.target_branch, merge_response.resultant_target_hash)
-                )
+        click.echo(f"Nothing merged from {from_ref} onto {merge_response.target_branch} (still on {merge_response.effective_target_hash})")
+        if merge_response.common_ancestor:
+            click.echo(f"Identified merge base commit {merge_response.common_ancestor}")
+        if merge_response.resultant_target_hash:
+            click.echo(f"Current, unchanged hash on {merge_response.target_branch} after merge: {merge_response.resultant_target_hash}")

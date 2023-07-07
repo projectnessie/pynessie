@@ -17,19 +17,52 @@
 import os
 import shutil
 import tempfile
-from typing import Any, List, Optional
+from typing import List, Optional
 
 import attr
 import pytest
-import simplejson
+import requests
 from assertpy import assert_that
 from click.testing import CliRunner, Result
-from vcr.config import VCR
-from vcr.request import Request
-from vcr.serializers import yamlserializer
+from testcontainers.core.generic import DockerContainer
+from testcontainers.core.waiting_utils import wait_container_is_ready
 
 from pynessie import cli
 from pynessie.model import Content, ContentSchema, ReferenceSchema
+
+
+class NessieContainer(DockerContainer):
+    """Nessie test container."""
+
+    NESSIE_PORT = 19120
+    DEFAULT_IMAGE = "ghcr.io/projectnessie/nessie:latest"
+    DEFAULT_TEST_IMAGE = "ghcr.io/projectnessie/nessie-unstable:latest"
+
+    def __init__(self, image: str = DEFAULT_IMAGE) -> None:
+        """Nessie test container constructor using the Nessie image tagged as 'latest'."""
+        super().__init__(image=image)
+        self.with_exposed_ports(NessieContainer.NESSIE_PORT)
+
+    def get_base_url(self) -> str:
+        """Get the root Nessie HTTP URL."""
+        host = self.get_container_host_ip()
+        port = self.get_exposed_port(NessieContainer.NESSIE_PORT)
+        return f"http://{host}:{port}/"
+
+    def get_url(self, api_version: int = 1) -> str:
+        """Retrieve the Nessie API URL for the given Nessie API version, defaults to 1."""
+        return f"{self.get_base_url()}api/v{api_version}"
+
+    @wait_container_is_ready(requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout)
+    def _connect(self) -> None:
+        response = requests.get(f"{self.get_base_url()}", timeout=1)
+        response.raise_for_status()
+
+    def start(self) -> "NessieContainer":
+        """Starts the Nessie container, waits until Nessie is ready."""
+        super().start()
+        self._connect()
+        return self
 
 
 @attr.dataclass
@@ -39,8 +72,10 @@ class NessieTestConfig:
     config_dir: str
     cleanup: bool
 
+    nessie_container: Optional[NessieContainer]
 
-nessie_test_config: NessieTestConfig = NessieTestConfig("", False)
+
+nessie_test_config: NessieTestConfig = NessieTestConfig("", False, None)
 
 
 def pytest_configure(config):  # noqa
@@ -59,11 +94,30 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     """Remove temporary config directory."""
     shutil.rmtree(nessie_test_config.config_dir)
 
+    if nessie_test_config.nessie_container is not None:
+        nessie_test_config.nessie_container.stop()
+
+
+def pytest_runtest_setup(item: pytest.Item) -> None:
+    """Starts a Nessie container, if needed."""
+    if nessie_test_config.nessie_container is None and item.get_closest_marker("nessieserver") is not None:
+        nessie_test_config.nessie_container = NessieContainer(image=NessieContainer.DEFAULT_TEST_IMAGE)
+        nessie_test_config.nessie_container.start()
+
+        os.environ["NESSIE_ENDPOINT"] = nessie_test_config.nessie_container.get_url(1)
+
+
+def pytest_runtest_teardown(item: pytest.Item, nextitem: Optional[pytest.Item]) -> None:
+    """Stops the Nessie container, if one was started."""
+    if item.get_closest_marker("nessieserver") is not None and nessie_test_config.nessie_container is not None:
+        reset_nessie_server_state()
+
 
 def execute_cli_command_raw(args: List[str], input_data: Optional[str] = None, ret_val: int = 0) -> Result:
     """Execute a Nessie CLI command."""
     result = CliRunner().invoke(cli.cli, args, input=input_data)
     if result.exit_code != ret_val:
+        print(f"Nessie CLI exited with unexpected code {result.exit_code}, expected {ret_val}")
         print(result.stdout)
         print(result.stderr)
         print(result)  # exception
@@ -120,114 +174,3 @@ def reset_nessie_server_state() -> None:
     assert_that(branches).is_length(1)
     assert_that(branches[0].name).is_equal_to("main")
     assert_that(branches[0].hash_).is_equal_to(no_ancestor_hash)
-
-
-def before_record_cb(request: Request) -> Optional[Request]:
-    """VCR callback that instructs it to not record our "cleanup" requests."""
-    if nessie_test_config.cleanup:
-        return None
-    return request
-
-
-def _sort_json(value: str) -> str:
-    """Parses JSON and serializes it again with a fixed key order."""
-    try:
-        json = simplejson.loads(value)
-        sorted_json = simplejson.dumps(json, sort_keys=True)
-        return sorted_json
-    except ValueError:
-        return value
-
-
-def _reformat_body(obj: dict) -> None:
-    """Sorts JSON objects embedded in HTTP payload by their keys."""
-    body = obj["body"]
-    sorted_json = None
-    if body:
-        if isinstance(body, str):
-            sorted_json = _sort_json(body)
-            obj["body"] = sorted_json
-        elif isinstance(body, dict):
-            sorted_json = _sort_json(body["string"])
-            body["string"] = sorted_json
-        else:
-            raise RuntimeError("Unexpected cassette structure")
-
-    # Adjust content length if changed
-    if sorted_json:
-        headers = obj["headers"]
-        for k in headers:
-            if k.lower() == "content-length":  # might have different case in cassettes
-                headers[k] = [str(len(sorted_json))]  # one-element list
-                break
-
-
-class _NessieSortingSerializer:
-    @staticmethod
-    def deserialize(cassette_string: str) -> Any:
-        """Delegates to the default yaml cassette serializer."""
-        return yamlserializer.deserialize(cassette_string)
-
-    @staticmethod
-    def serialize(cassette_dict: dict) -> str:
-        """Reformats JSON payloads in requests and responses.
-
-        This is to avoid spurious changes in cassette yaml files under source control.
-        """
-        if "interactions" in cassette_dict:
-            for i in cassette_dict["interactions"]:
-                _reformat_body(i["request"])
-                _reformat_body(i["response"])
-
-        return yamlserializer.serialize(cassette_dict)
-
-
-def pytest_recording_configure(config: pytest.Config, vcr: VCR) -> None:
-    """Callback invoked by pytest_recording. We register a custom VCR serializer here."""
-    ser_name = "nessie_sorted_json"
-    vcr.register_serializer(ser_name, _NessieSortingSerializer())
-    vcr.serializer = ser_name
-
-
-@pytest.fixture(scope="module")
-def vcr_config() -> dict:
-    """VCR config that adds a custom before_record_request callback."""
-    nessie_test_config.cleanup = False
-    return {
-        "before_record_request": before_record_cb,
-    }
-
-
-@pytest.fixture(autouse=True)
-def _clean_nessie_session_marker(request: pytest.FixtureRequest, record_mode: str) -> None:
-    """This pytest fixture is invoked for all test methods and cleans up the Nessie Server state.
-
-    :param request Request object provided by the pytest framework
-    :param record_mode Recording mode provided by the VCR plugin
-    """
-    # Cleaning the Nessie Server state is meaningful only when we are recording,
-    # i.e. when the tests are running against a real server, not against VCR cassettes.
-    # Consequently, when the tests will run against VCR cassettes, the pre-recorded
-    # responses will simulate a "clean" server.
-    if record_mode is None or record_mode == "none":
-        return
-
-    vcr_marker = request.node.get_closest_marker("vcr")
-
-    # Clean the server state for tests that have the @pytest.mark.vcr annotation
-    if vcr_marker:
-        if "record_mode" in vcr_marker.kwargs:
-            # if we have record_mode set in @pytest.mark.vcr annotation, we test that first
-            test_record_mode = vcr_marker.kwargs["record_mode"]
-
-            if test_record_mode is None:
-                raise RuntimeError("record_mode can't be None or empty if set.")
-
-            if test_record_mode == "none":
-                return
-
-        try:
-            nessie_test_config.cleanup = True
-            reset_nessie_server_state()
-        finally:
-            nessie_test_config.cleanup = False
