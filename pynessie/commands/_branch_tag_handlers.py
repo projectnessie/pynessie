@@ -107,7 +107,7 @@ def _handle_json_output(input_data: list, ref_name: str) -> str:
 
 
 def _handle_normal_output(input_data: list, verbose: bool, default_branch: str, show_additional_info: bool = False) -> str:
-    output = ""
+    output_rows = []
     max_width = max((len(i.name) for i in input_data), default=0)
     for x in input_data:
         additional_info = ""
@@ -131,12 +131,12 @@ def _handle_normal_output(input_data: list, verbose: bool, default_branch: str, 
                 f"commits ahead: {commits_ahead} | ancestor: {ancestor} | HEAD: {head}]"
             )
 
-        next_row = "{}{}{}{}{}\n".format(
+        next_row = "{}{}{}{}{}".format(
             "*".ljust(2) if x.name == default_branch else "  ",
             x.name.ljust(max_width + 1),
             " " if verbose else "",
             x.hash_ if verbose else "",
             additional_info,
         )
-        output += click.style(next_row, fg="yellow") if x.name == default_branch else next_row
-    return output
+        output_rows.append(click.style(next_row, fg="yellow") if x.name == default_branch else next_row)
+    return "\n".join(output_rows)
