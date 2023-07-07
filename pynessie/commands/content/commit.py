@@ -138,11 +138,9 @@ def _get_edit_content_operations(
             continue
 
         click.echo("Setting content for key " + formatted_content_key)
-        if content_new.requires_expected_state():
-            content_expected = content_new if expect_same_contents else content_original
-            contents_operations.append(Put(content_key, content_new, content_expected))
-        else:
-            contents_operations.append(Put(content_key, content_new))
+        if content_original is not None:
+            content_new.id = content_original.id
+        contents_operations.append(Put(content_key, content_new))
 
     return contents_operations
 

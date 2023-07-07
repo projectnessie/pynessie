@@ -317,7 +317,7 @@ def assign_tag(
 
 def cherry_pick(
     base_url: str, auth: Optional[AuthBase], branch: str, transplant_json: dict, expected_hash: Optional[str], ssl_verify: bool = True
-) -> None:
+) -> dict:
     """cherry-pick a list of hashes to a branch.
 
     :param base_url: base Nessie url
@@ -331,7 +331,8 @@ def cherry_pick(
     params = {}
     if expected_hash:
         params["expectedHash"] = expected_hash
-    _post(base_url + url, auth, json=transplant_json, ssl_verify=ssl_verify, params=params)
+    response = _post(base_url + url, auth, json=transplant_json, ssl_verify=ssl_verify, params=params)
+    return cast(dict, response)
 
 
 def merge(

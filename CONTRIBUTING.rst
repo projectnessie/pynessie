@@ -130,8 +130,12 @@ Tips
 
 To run a subset of tests::
 
-$ pytest tests.test_pynessie
+    $ pytest tests.test_pynessie
 
 To fix code style issues::
 
-$ black pynessie/ tests/
+    $ black pynessie/ tests/
+
+If you are using podman::
+
+    export DOCKER_HOST=unix:///run/user/$(id -u)/podman/podman.sock

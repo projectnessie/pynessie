@@ -28,8 +28,6 @@ from pynessie.error import (
     _create_exception,
 )
 
-# Non-VCR tests for error response handling
-
 
 def test_raise_exception_missing_payload() -> None:
     """Test the handling error responses with missing JSON payload."""

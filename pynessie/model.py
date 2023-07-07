@@ -59,12 +59,7 @@ def split_into_reference_and_hash(ref_with_hash: Optional[str]) -> Tuple[str, Op
 class Content:
     """Dataclass for Nessie Content."""
 
-    id: str = desert.ib(fields.Str())
-
-    @staticmethod
-    def requires_expected_state() -> bool:
-        """Checks whether this Content object requires the "expected" state to be provided for Put operations."""
-        return False
+    id: Optional[str] = desert.ib(fields.Str(allow_none=True))
 
     def pretty_print(self) -> str:
         """Print out for cli."""
@@ -80,11 +75,6 @@ class IcebergTable(Content):
     schema_id: int = desert.ib(fields.Int(data_key="schemaId"))
     spec_id: int = desert.ib(fields.Int(data_key="specId"))
     sort_order_id: int = desert.ib(fields.Int(data_key="sortOrderId"))
-
-    @staticmethod
-    def requires_expected_state() -> bool:
-        """Returns True - expected state should be provided for Put operations on Iceberg tables."""
-        return True
 
     def pretty_print(self) -> str:
         """Print out for cli."""
