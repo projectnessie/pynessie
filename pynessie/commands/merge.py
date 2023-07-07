@@ -15,8 +15,6 @@
 
 """merge CLI command."""
 
-import json
-
 import click
 from click import UsageError
 
