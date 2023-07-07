@@ -32,7 +32,7 @@ from .conftest import execute_cli_command, make_commit, ref_hash
 CONTENT_COMMAND = "content"
 
 
-@pytest.mark.nessie
+@pytest.mark.nessieserver
 def test_content_view() -> None:
     """Test content view."""
     branch = "contents_view_dev"
@@ -81,7 +81,7 @@ def test_content_view() -> None:
     assert_that(result_table[0]).is_equal_to(iceberg_view)
 
 
-@pytest.mark.nessie
+@pytest.mark.nessieserver
 def test_content_list() -> None:
     """Test content list."""
     branch = "contents_list_dev"
@@ -140,7 +140,7 @@ def test_content_list() -> None:
     assert_that(set(i.kind for i in tables)).is_equal_to({"ICEBERG_TABLE", "ICEBERG_VIEW", "DELTA_LAKE_TABLE"})
 
 
-@pytest.mark.nessie
+@pytest.mark.nessieserver
 def test_content_commit_delete() -> None:
     """Test content commit delete operation."""
     branch = "contents_commit_delete_dev"
@@ -167,7 +167,7 @@ def test_content_commit_delete() -> None:
     assert_that(tables).is_length(0)
 
 
-@pytest.mark.nessie
+@pytest.mark.nessieserver
 def test_content_commit_with_empty_content_delete() -> None:
     """Test content commit delete with empty content operation."""
     branch = "contents_commit_with_empty_content_delete_dev"
@@ -195,7 +195,7 @@ def test_content_commit_with_empty_content_delete() -> None:
     assert_that(tables).is_length(0)
 
 
-@pytest.mark.nessie
+@pytest.mark.nessieserver
 def test_content_commit_with_edited_data() -> None:
     """Test content commit to edit data operation."""
     branch = "content_commit_with_edited_data_dev"

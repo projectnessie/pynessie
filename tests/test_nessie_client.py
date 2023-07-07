@@ -20,7 +20,7 @@ from pynessie.error import NessieConflictException
 from pynessie.model import Branch, Entries
 
 
-@pytest.mark.nessie
+@pytest.mark.nessieserver
 def test_client_interface_e2e() -> None:
     """Test client object against live server."""
     client = init()

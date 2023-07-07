@@ -45,7 +45,7 @@ from .conftest import (
 )
 
 
-@pytest.mark.nessie
+@pytest.mark.nessieserver
 def test_command_line_interface() -> None:
     """Test the CLI."""
     assert "Usage: nessie" in execute_cli_command([])
@@ -75,7 +75,7 @@ def test_set_unset() -> None:
     assert "123" not in execute_cli_command(["config", "--list"])
 
 
-@pytest.mark.nessie
+@pytest.mark.nessieserver
 def test_remote() -> None:
     """Test setting and viewing remote."""
     execute_cli_command(["remote", "add", "http://test.url"])
@@ -93,7 +93,7 @@ def _new_table() -> IcebergTable:
     return IcebergTable(None, "/a/b/c", 42, 43, 44, 45)
 
 
-@pytest.mark.nessie
+@pytest.mark.nessieserver
 def test_log() -> None:
     """Test log and log filtering."""
     main_hash = ref_hash("main")
@@ -190,7 +190,7 @@ def test_log() -> None:
     execute_cli_command(["--json", "log", f"main@{main_hash}", "--revision-range", logs[0]["hash"]], ret_val=2)
 
 
-@pytest.mark.nessie
+@pytest.mark.nessieserver
 def test_branch() -> None:
     """Test create and assign refs."""
     main_hash = ref_hash("main")
@@ -236,7 +236,7 @@ def test_branch() -> None:
     assert len(references) == 1
 
 
-@pytest.mark.nessie
+@pytest.mark.nessieserver
 def test_tag() -> None:
     """Test create and assign refs."""
     main_hash = ref_hash("main")
@@ -284,7 +284,7 @@ def test_tag() -> None:
     assert_that(ref_metadata.commit_meta_of_head).is_not_none()
 
 
-@pytest.mark.nessie
+@pytest.mark.nessieserver
 def test_assign() -> None:
     """Test assign operation."""
     execute_cli_command(["branch", "dev"])
@@ -301,7 +301,7 @@ def test_assign() -> None:
     assert tags["v1.0"] == refs["dev"]
 
 
-@pytest.mark.nessie
+@pytest.mark.nessieserver
 def test_merge() -> None:
     """Test merge operation."""
     make_commit("initial_commit", _new_table(), "main", message="Initial commit")
@@ -344,7 +344,7 @@ def test_merge() -> None:
     assert_that(logs).is_length(2)
 
 
-@pytest.mark.nessie
+@pytest.mark.nessieserver
 def test_merge_json() -> None:
     """Test merge operation."""
     make_commit("initial_commit", _new_table(), "main", message="Initial commit")
@@ -374,7 +374,7 @@ def test_merge_json() -> None:
     assert_that(logs).is_length(2)
 
 
-@pytest.mark.nessie
+@pytest.mark.nessieserver
 def test_merge_detached() -> None:
     """Test merge operation."""
     make_commit("initial_commit", _new_table(), "main", message="Initial commit")
@@ -408,7 +408,7 @@ def test_merge_detached() -> None:
     assert_that(logs).is_length(2)
 
 
-@pytest.mark.nessie
+@pytest.mark.nessieserver
 def test_merge_detached_json() -> None:
     """Test merge operation."""
     make_commit("initial_commit", _new_table(), "main", message="Initial commit")
@@ -438,7 +438,7 @@ def test_merge_detached_json() -> None:
     assert_that(logs).is_length(2)
 
 
-@pytest.mark.nessie
+@pytest.mark.nessieserver
 def test_transplant() -> None:
     """Test transplant operation."""
     execute_cli_command(["branch", "dev"])
@@ -456,7 +456,7 @@ def test_transplant() -> None:
     assert_that(logs[1]["message"]).is_equal_to("commit 2")
 
 
-@pytest.mark.nessie
+@pytest.mark.nessieserver
 def test_diff() -> None:
     """Test log and log filtering."""
     diff = DiffResponseSchema().loads(execute_cli_command(["--json", "diff", "main", "main"]))

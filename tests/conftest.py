@@ -100,7 +100,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
 
 def pytest_runtest_setup(item: pytest.Item) -> None:
     """Starts a Nessie container, if needed."""
-    if nessie_test_config.nessie_container is None and item.get_closest_marker("nessie") is not None:
+    if nessie_test_config.nessie_container is None and item.get_closest_marker("nessieserver") is not None:
         nessie_test_config.nessie_container = NessieContainer(image=NessieContainer.DEFAULT_TEST_IMAGE)
         nessie_test_config.nessie_container.start()
 
@@ -109,7 +109,7 @@ def pytest_runtest_setup(item: pytest.Item) -> None:
 
 def pytest_runtest_teardown(item: pytest.Item, nextitem: Optional[pytest.Item]) -> None:
     """Stops the Nessie container, if one was started."""
-    if item.get_closest_marker("nessie") is not None and nessie_test_config.nessie_container is not None:
+    if item.get_closest_marker("nessieserver") is not None and nessie_test_config.nessie_container is not None:
         reset_nessie_server_state()
 
 

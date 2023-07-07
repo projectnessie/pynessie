@@ -18,7 +18,7 @@ import pytest
 from .conftest import execute_cli_command
 
 
-@pytest.mark.nessie
+@pytest.mark.nessieserver
 @pytest.mark.skip("Test is no longer valid?")
 def test_server_error_html() -> None:
     """Test the handling of 500 responses with HTML payload (unexpected, but possible)."""
@@ -27,7 +27,7 @@ def test_server_error_html() -> None:
     assert "500" in result
 
 
-@pytest.mark.nessie
+@pytest.mark.nessieserver
 @pytest.mark.skip("Test is no longer valid?")
 def test_server_error_json() -> None:
     """Test the handling of 500 responses with JSON payload."""
