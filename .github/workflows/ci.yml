@@ -41,7 +41,7 @@ jobs:
       # respecting GitHub's concurrent jobs limit.
       max-parallel: 1
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.7'] # 3.8 first, it has "all the tox envs"
+        python-version: ['3.8', '3.9', '3.10', '3.11'] # 3.8 first, it has "all the tox envs"
     steps:
       - uses: actions/checkout@v3.5.3
       - name: Setup Python
