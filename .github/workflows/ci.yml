@@ -33,13 +33,13 @@ concurrency:
 
 jobs:
 
+  # Test against latest Nessie release against the Python version matrix
   python:
     name: CI Python
     runs-on: ubuntu-22.04
+    env:
+      NESSIE_TEST_IMAGE: 'ghcr.io/projectnessie/nessie:latest'
     strategy:
-      # Python CI is relatively quick, don't parallelize to reduce number of concurrent jobs,
-      # respecting GitHub's concurrent jobs limit.
-      max-parallel: 1
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11'] # 3.8 first, it has "all the tox envs"
     steps:
@@ -50,3 +50,27 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Test with tox
         run: tox
+      - name: Just show images
+        run: docker image ls
+
+  # Test against various Nessie releases incl SNAPSHOT
+  nessie-snapshot:
+    name: CI Nessie Image
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        nessie-image:
+            - 'ghcr.io/projectnessie/nessie-unstable:latest'
+            - 'ghcr.io/projectnessie/nessie:0.63.0'
+    steps:
+      - uses: actions/checkout@v3.5.3
+      - name: Setup Python
+        uses: ./.github/actions/dev-tool-python
+        with:
+          python-version: 3.8
+      - name: Test with tox
+        env:
+          NESSIE_TEST_IMAGE: ${{ matrix.nessie-image }}
+        run: tox
+      - name: Just show images
+        run: docker image ls

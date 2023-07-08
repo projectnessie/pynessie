@@ -101,7 +101,8 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
 def pytest_runtest_setup(item: pytest.Item) -> None:
     """Starts a Nessie container, if needed."""
     if nessie_test_config.nessie_container is None and item.get_closest_marker("nessieserver") is not None:
-        nessie_test_config.nessie_container = NessieContainer(image=NessieContainer.DEFAULT_TEST_IMAGE)
+        image = os.environ.get("NESSIE_TEST_IMAGE", NessieContainer.DEFAULT_TEST_IMAGE)
+        nessie_test_config.nessie_container = NessieContainer(image=image)
         nessie_test_config.nessie_container.start()
 
         os.environ["NESSIE_ENDPOINT"] = nessie_test_config.nessie_container.get_url(1)
