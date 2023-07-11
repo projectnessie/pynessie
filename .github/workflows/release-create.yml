@@ -72,7 +72,7 @@ jobs:
         python3 -m pip install bump2version
         # Remove the following, once https://github.com/c4urself/bump2version/issues/30 is fixed
         # and the two workarounds below are removed.
-        python3 -m pip install -r python/requirements.txt
+        python3 -m pip install -r requirements.txt
     ### END runner setup
 
     - name: Bump pynessie version
@@ -81,13 +81,13 @@ jobs:
         RELEASE_VERSION="$(cat setup.cfg | grep -e '^current_version' | cut -d= -f2 | sed 's/ //g')"
         echo "RELEASE_VERSION=${RELEASE_VERSION}" >> ${GITHUB_ENV}
 
-    # Updates the python/HISTORY.rst file, takes the first four lines (the big heading),
+    # Updates the HISTORY.rst file, takes the first four lines (the big heading),
     # adds a heading with the version and a single item referencing the release notes on GitHub,
-    # followed by the Git change log for the python/ directory, finalized with the remainder of the
-    # previous python/HISTORY.rst file.
+    # followed by the Git change log for this directory, finalized with the remainder of the
+    # previous HISTORY.rst file.
     - name: Update HISTORY.rst file
       run: |
-        head -4 python/HISTORY.rst > /tmp/HISTORY.rst
+        head -4 HISTORY.rst > /tmp/HISTORY.rst
         HEAD="${RELEASE_VERSION} ($(date '+%Y-%m-%d'))"
         cat <<!  >> /tmp/HISTORY.rst
         ${HEAD}
@@ -97,24 +97,24 @@ jobs:
         !
 
         git log --perl-regexp --author '^(?!.*renovate|.*nessie-release-workflow).*$'\
-          --format='format:* %s' ${LAST_TAG}..HEAD python/ |\
+          --format='format:* %s' ${LAST_TAG}..HEAD |\
           >> /tmp/HISTORY.rst
 
-        tail +4 python/HISTORY.rst >> /tmp/HISTORY.rst
+        tail +4 HISTORY.rst >> /tmp/HISTORY.rst
 
-        cp /tmp/HISTORY.rst python/HISTORY.rst
+        cp /tmp/HISTORY.rst HISTORY.rst
         rm /tmp/HISTORY.rst
 
     - name: Configure release-bot-user in git config
       run: |
-        git config --global user.email "nessie-release-workflow-noreply@projectnessie.org"
-        git config --global user.name "Nessie Release Workflow [bot]"
+        git config --global user.email "pynessie-release-workflow-noreply@projectnessie.org"
+        git config --global user.name "PyNessie Release Workflow [bot]"
 
     # Record the release-version in git and add the git tag for the release.
     - name: Record ${{ env.RELEASE_VERSION }} release in git
       run: |
-        git commit -a -m "[release] release nessie-${RELEASE_VERSION}"
-        git tag -f -a -m "Release ${RELEASE_VERSION} from ${RELEASE_FROM} with bump-type ${BUMP_TYPE}" ${GIT_TAG}
+        git commit -a -m "[release] release pynessie ${RELEASE_VERSION}"
+        git tag -f -a -m "Release pynessie ${RELEASE_VERSION} from ${RELEASE_FROM} with bump-type ${BUMP_TYPE}" ${GIT_TAG}
 
         cat <<! >> $GITHUB_STEP_SUMMARY
         ## Release version information

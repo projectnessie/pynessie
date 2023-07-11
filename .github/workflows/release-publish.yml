@@ -90,7 +90,7 @@ jobs:
     - name: Install Python dependencies
       run: |
         python3 -m pip install --upgrade pip
-        python3 -m pip install -r python/requirements_dev.txt
+        python3 -m pip install -r requirements_dev.txt
     ### END runner setup
 
     # Deploys pynessie. Build and test steps were already ran in previous steps
