@@ -33,7 +33,7 @@ def test_client_interface_e2e() -> None:
     main_name = references[0].name
     main_commit = references[0].hash_
     with pytest.raises(NessieConflictException):
-        client.create_branch("main")
+        client.create_branch("main", "main", client.get_reference(None).hash_)
     created_reference = client.create_branch("test", main_name, main_commit)
     references = client.list_references().references
     assert len(references) == 2
