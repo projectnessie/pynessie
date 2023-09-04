@@ -43,7 +43,7 @@ jobs:
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11'] # 3.8 first, it has "all the tox envs"
     steps:
-      - uses: actions/checkout@v3.6.0
+      - uses: actions/checkout@v4.0.0
       - name: Setup Python
         uses: ./.github/actions/dev-tool-python
         with:
@@ -63,7 +63,7 @@ jobs:
             - 'ghcr.io/projectnessie/nessie-unstable:latest'
             - 'ghcr.io/projectnessie/nessie:0.63.0'
     steps:
-      - uses: actions/checkout@v3.6.0
+      - uses: actions/checkout@v4.0.0
       - name: Setup Python
         uses: ./.github/actions/dev-tool-python
         with:
