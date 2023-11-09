@@ -17,6 +17,7 @@
 
 import os
 from typing import Any, Optional, Union, cast
+from urllib.parse import quote_plus
 
 import requests
 import simplejson as jsonlib
@@ -138,7 +139,7 @@ def get_reference(base_url: str, auth: Optional[AuthBase], ref: str, ssl_verify:
     :param ssl_verify: ignore ssl errors if False
     :return: json Nessie branch or tag
     """
-    return cast(dict, _get(base_url + "/trees/tree/{}".format(ref), auth, ssl_verify=ssl_verify))
+    return cast(dict, _get(base_url + "/trees/tree/{}".format(quote_plus(ref)), auth, ssl_verify=ssl_verify))
 
 
 def create_reference(
@@ -180,7 +181,7 @@ def delete_branch(base_url: str, auth: Optional[AuthBase], branch: str, hash_: s
     :param ssl_verify: ignore ssl errors if False
     """
     params = {"expectedHash": hash_}
-    _delete(base_url + "/trees/branch/{}".format(branch), auth, ssl_verify=ssl_verify, params=params)
+    _delete(base_url + "/trees/branch/{}".format(quote_plus(branch)), auth, ssl_verify=ssl_verify, params=params)
 
 
 def delete_tag(base_url: str, auth: Optional[AuthBase], tag: str, hash_: str, ssl_verify: bool = True) -> None:
@@ -193,7 +194,7 @@ def delete_tag(base_url: str, auth: Optional[AuthBase], tag: str, hash_: str, ss
     :param ssl_verify: ignore ssl errors if False
     """
     params = {"expectedHash": hash_}
-    _delete(base_url + "/trees/tag/{}".format(tag), auth, ssl_verify=ssl_verify, params=params)
+    _delete(base_url + "/trees/tag/{}".format(quote_plus(tag)), auth, ssl_verify=ssl_verify, params=params)
 
 
 def list_tables(
@@ -227,7 +228,7 @@ def list_tables(
         params["pageToken"] = page_token
     if query_filter:
         params["filter"] = query_filter
-    return cast(list, _get(base_url + "/trees/tree/{}/entries".format(ref), auth, ssl_verify=ssl_verify, params=params))
+    return cast(list, _get(base_url + "/trees/tree/{}/entries".format(quote_plus(ref)), auth, ssl_verify=ssl_verify, params=params))
 
 
 def list_logs(
@@ -259,7 +260,7 @@ def list_logs(
         params["maxRecords"] = max_records
     if fetch_all:
         params["fetch"] = "ALL"
-    return cast(dict, _get(base_url + "/trees/tree/{}/log".format(ref), auth, ssl_verify=ssl_verify, params=filtering_args))
+    return cast(dict, _get(base_url + "/trees/tree/{}/log".format(quote_plus(ref)), auth, ssl_verify=ssl_verify, params=filtering_args))
 
 
 def get_content(
@@ -278,7 +279,9 @@ def get_content(
     params = {"ref": ref}
     if hash_on_ref:
         params["hashOnRef"] = hash_on_ref
-    return cast(dict, _get(base_url + "/contents/{}".format(content_key.to_path_string()), auth, ssl_verify=ssl_verify, params=params))
+    return cast(
+        dict, _get(base_url + "/contents/{}".format(quote_plus(content_key.to_path_string())), auth, ssl_verify=ssl_verify, params=params)
+    )
 
 
 def assign_branch(
@@ -293,7 +296,7 @@ def assign_branch(
     :param old_hash: current hash of the branch
     :param ssl_verify: ignore ssl errors if False
     """
-    url = "/trees/branch/{}".format(branch)
+    url = "/trees/branch/{}".format(quote_plus(branch))
     params = {"expectedHash": old_hash}
     _put(base_url + url, auth, assign_to_json, ssl_verify=ssl_verify, params=params)
 
@@ -310,7 +313,7 @@ def assign_tag(
     :param old_hash: current hash of the tag
     :param ssl_verify: ignore ssl errors if False
     """
-    url = "/trees/tag/{}".format(tag)
+    url = "/trees/tag/{}".format(quote_plus(tag))
     params = {"expectedHash": old_hash}
     _put(base_url + url, auth, assign_to_json, ssl_verify=ssl_verify, params=params)
 
@@ -327,7 +330,7 @@ def cherry_pick(
     :param expected_hash: expected hash of HEAD of branch
     :param ssl_verify: ignore ssl errors if False
     """
-    url = "/trees/branch/{}/transplant".format(branch)
+    url = "/trees/branch/{}/transplant".format(quote_plus(branch))
     params = {}
     if expected_hash:
         params["expectedHash"] = expected_hash
@@ -348,7 +351,7 @@ def merge(
     :param ssl_verify: ignore ssl errors if False
     :return: json dict of a merge response
     """
-    url = "/trees/branch/{}/merge".format(branch)
+    url = "/trees/branch/{}/merge".format(quote_plus(branch))
     params = {}
     if expected_hash:
         params["expectedHash"] = expected_hash
@@ -373,7 +376,7 @@ def commit(
     :param expected_hash: expected hash of HEAD of branch
     :param ssl_verify: ignore ssl errors if False
     """
-    url = "/trees/branch/{}/commit".format(branch)
+    url = "/trees/branch/{}/commit".format(quote_plus(branch))
     params = {"expectedHash": expected_hash}
     return cast(dict, _post(base_url + url, auth, json=operations, ssl_verify=ssl_verify, params=params))
 
