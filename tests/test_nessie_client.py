@@ -52,8 +52,8 @@ def test_client_interface_e2e() -> None:
         assert create_branch_ref == reference
         assert isinstance(reference.hash_, str)
         tables = client.list_keys(reference.name, reference.hash_)
-    assert isinstance(tables, Entries)
-    assert len(tables.entries) == 0
+        assert isinstance(tables, Entries)
+        assert len(tables.entries) == 0
     assert isinstance(main_commit, str)
     client.delete_branch("test", main_commit)
     references = client.list_references().references
@@ -68,10 +68,10 @@ def test_client_sanitize_url() -> None:
     client = init()
     base_url = client.get_base_url()
     assert _sanitize_url(base_url) == base_url
-    assert _sanitize_url(base_url + "trees/tree") == base_url + "trees/tree"
-    assert _sanitize_url(base_url + "trees/tree/{}", "my tag with spaces") == base_url + "trees/tree/my%20tag%20with%20spaces"
-    assert _sanitize_url(base_url + "trees/tree/{}", "my/tag with mixed.types") == base_url + "trees/tree/my%2Ftag%20with%20mixed.types"
+    assert _sanitize_url(base_url + "/trees/tree") == base_url + "/trees/tree"
+    assert _sanitize_url(base_url + "/trees/tree/{}", "my tag with spaces") == base_url + "/trees/tree/my%20tag%20with%20spaces"
+    assert _sanitize_url(base_url + "/trees/tree/{}", "my/tag with mixed.types") == base_url + "/trees/tree/my%2Ftag%20with%20mixed.types"
     assert (
-        _sanitize_url(base_url + "trees/tree/{}/{}", "tag/name", "other/string@with-at")
-        == base_url + "trees/tree/tag%2Fname/other%2Fstring%40with-at"
+        _sanitize_url(base_url + "/trees/tree/{}/{}", "tag/name", "other/string@with-at")
+        == base_url + "/trees/tree/tag%2Fname/other%2Fstring%40with-at"
     )
