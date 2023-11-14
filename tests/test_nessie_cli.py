@@ -209,6 +209,9 @@ def test_branch() -> None:
     execute_cli_command(["branch", "etl_hash", f"main@{main_hash}"])
     references = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
     assert len(references) == 5
+    execute_cli_command(["branch", "with/slash", f"main@{main_hash}"])
+    references = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
+    assert len(references) == 6
     references = ReferenceSchema().loads(execute_cli_command(["--json", "branch", "-l", "etl"]), many=False)
     assert_that(references.name).is_equal_to("etl")
     references = simplejson.loads(execute_cli_command(["--json", "branch", "-l", "foo"]))
@@ -232,6 +235,7 @@ def test_branch() -> None:
     execute_cli_command(["branch", "-d", "dev", "-c", dev_hash])
     execute_cli_command(["branch", "-d", "etl_hash", "-c", main_hash])
     execute_cli_command(["branch", "-d", "dev_hash"])
+    execute_cli_command(["branch", "-d", "with/slash"])
     references = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
     assert len(references) == 1
 
@@ -255,6 +259,9 @@ def test_tag() -> None:
     execute_cli_command(["tag", "etl-hash-tag", f"main@{main_hash}"])
     references = ReferenceSchema().loads(execute_cli_command(["--json", "tag"]), many=True)
     assert len(references) == 4
+    execute_cli_command(["tag", "with/slash/tag", f"main@{main_hash}"])
+    references = ReferenceSchema().loads(execute_cli_command(["--json", "tag"]), many=True)
+    assert len(references) == 5
     references = ReferenceSchema().loads(execute_cli_command(["--json", "tag", "-l", "etl-tag"]), many=False)
     assert_that(references.name).is_equal_to("etl-tag")
     references = simplejson.loads(execute_cli_command(["--json", "tag", "-l", "foo"]))
@@ -263,6 +270,7 @@ def test_tag() -> None:
     execute_cli_command(["tag", "-d", "etl-hash-tag"])
     execute_cli_command(["tag", "-d", "dev-tag", "-c", main_hash])
     execute_cli_command(["tag", "-d", "dev-hash-tag", "-c", main_hash])
+    execute_cli_command(["tag", "-d", "with/slash/tag", "-c", main_hash])
     references = ReferenceSchema().loads(execute_cli_command(["--json", "tag"]), many=True)
     assert len(references) == 0
     execute_cli_command(["tag", "v1.0"])

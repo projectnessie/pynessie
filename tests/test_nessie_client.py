@@ -16,6 +16,7 @@
 import pytest
 
 from pynessie import init
+from pynessie.client._endpoints import _sanitize_url
 from pynessie.error import NessieConflictException
 from pynessie.model import Branch, Entries
 
@@ -35,17 +36,42 @@ def test_client_interface_e2e() -> None:
     with pytest.raises(NessieConflictException):
         client.create_branch("main", "main", client.get_reference(None).hash_)
     created_reference = client.create_branch("test", main_name, main_commit)
+    created_reference_with_slash = client.create_branch("test/branch/name", main_name, main_commit)
     references = client.list_references().references
-    assert len(references) == 2
+    assert len(references) == 3
     assert next(i for i in references if i.name == "main") == Branch("main", main_commit)
     assert next(i for i in references if i.name == "test") == Branch("test", main_commit)
-    reference = client.get_reference("test")
-    assert created_reference == reference
-    assert isinstance(reference.hash_, str)
-    tables = client.list_keys(reference.name, reference.hash_)
+    assert next(i for i in references if i.name == "test/branch/name") == Branch("test/branch/name", main_commit)
+    # Testing multiple references
+    ref_to_test = {
+        "test": created_reference,
+        "test/branch/name": created_reference_with_slash,
+    }
+    for ref_name, create_branch_ref in ref_to_test.items():
+        reference = client.get_reference(ref_name)
+        assert create_branch_ref == reference
+        assert isinstance(reference.hash_, str)
+        tables = client.list_keys(reference.name, reference.hash_)
     assert isinstance(tables, Entries)
     assert len(tables.entries) == 0
     assert isinstance(main_commit, str)
     client.delete_branch("test", main_commit)
     references = client.list_references().references
+    assert len(references) == 2
+    client.delete_branch("test/branch/name", main_commit)
+    references = client.list_references().references
     assert len(references) == 1
+
+
+def test_client_sanitize_url() -> None:
+    """Test sanitization of URLs."""
+    client = init()
+    base_url = client.get_base_url()
+    assert _sanitize_url(base_url) == base_url
+    assert _sanitize_url(base_url + "trees/tree") == base_url + "trees/tree"
+    assert _sanitize_url(base_url + "trees/tree/{}", "my tag with spaces") == base_url + "trees/tree/my%20tag%20with%20spaces"
+    assert _sanitize_url(base_url + "trees/tree/{}", "my/tag with mixed.types") == base_url + "trees/tree/my%2Ftag%20with%20mixed.types"
+    assert (
+        _sanitize_url(base_url + "trees/tree/{}/{}", "tag/name", "other/string@with-at")
+        == base_url + "trees/tree/tag%2Fname/other%2Fstring%40with-at"
+    )
