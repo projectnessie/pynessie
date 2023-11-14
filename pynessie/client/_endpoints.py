@@ -17,7 +17,7 @@
 
 import os
 from typing import Any, Optional, Union, cast
-from urllib.parse import quote_plus
+from urllib.parse import quote
 
 import requests
 import simplejson as jsonlib
@@ -42,6 +42,10 @@ def _get_headers(has_body: bool = False) -> dict:
     if has_body:
         headers = {"Content-Type": "application/json"}
     return headers
+
+
+def _sanitize_url(url: str, *args: str) -> str:
+    return url.format(*[quote(arg, safe="") for arg in args])
 
 
 def _get(
@@ -124,10 +128,11 @@ def all_references(base_url: str, auth: Optional[AuthBase], ssl_verify: bool = T
     :param fetch_all: indicates whether additional metadata should be fetched
     :return: json list of Nessie references
     """
+    url = _sanitize_url(base_url + "/trees")
     params = {}
     if fetch_all:
         params["fetch"] = "ALL"
-    return cast(dict, _get(base_url + "/trees", auth, ssl_verify=ssl_verify, params=params))
+    return cast(dict, _get(url, auth, ssl_verify=ssl_verify, params=params))
 
 
 def get_reference(base_url: str, auth: Optional[AuthBase], ref: str, ssl_verify: bool = True) -> dict:
@@ -139,7 +144,8 @@ def get_reference(base_url: str, auth: Optional[AuthBase], ref: str, ssl_verify:
     :param ssl_verify: ignore ssl errors if False
     :return: json Nessie branch or tag
     """
-    return cast(dict, _get(base_url + "/trees/tree/{}".format(quote_plus(ref)), auth, ssl_verify=ssl_verify))
+    url = _sanitize_url(base_url + "/trees/tree/{}", ref)
+    return cast(dict, _get(url, auth, ssl_verify=ssl_verify))
 
 
 def create_reference(
@@ -154,10 +160,11 @@ def create_reference(
     :param ssl_verify: ignore ssl errors if False
     :return: json Nessie branch or tag
     """
+    url = _sanitize_url(base_url + "/trees/tree")
     params = {}
     if source_ref:
         params["sourceRefName"] = source_ref
-    return cast(dict, _post(base_url + "/trees/tree", auth, ref_json, ssl_verify=ssl_verify, params=params))
+    return cast(dict, _post(url, auth, ref_json, ssl_verify=ssl_verify, params=params))
 
 
 def get_default_branch(base_url: str, auth: Optional[AuthBase], ssl_verify: bool = True) -> dict:
@@ -168,7 +175,8 @@ def get_default_branch(base_url: str, auth: Optional[AuthBase], ssl_verify: bool
     :param ssl_verify: ignore ssl errors if False
     :return: json Nessie branch
     """
-    return cast(dict, _get(base_url + "/trees/tree", auth, ssl_verify=ssl_verify))
+    url = _sanitize_url(base_url + "/trees/tree")
+    return cast(dict, _get(url, auth, ssl_verify=ssl_verify))
 
 
 def delete_branch(base_url: str, auth: Optional[AuthBase], branch: str, hash_: str, ssl_verify: bool = True) -> None:
@@ -180,8 +188,9 @@ def delete_branch(base_url: str, auth: Optional[AuthBase], branch: str, hash_: s
     :param hash_: branch hash
     :param ssl_verify: ignore ssl errors if False
     """
+    url = _sanitize_url(base_url + "/trees/branch/{}", branch)
     params = {"expectedHash": hash_}
-    _delete(base_url + "/trees/branch/{}".format(quote_plus(branch)), auth, ssl_verify=ssl_verify, params=params)
+    _delete(url, auth, ssl_verify=ssl_verify, params=params)
 
 
 def delete_tag(base_url: str, auth: Optional[AuthBase], tag: str, hash_: str, ssl_verify: bool = True) -> None:
@@ -193,8 +202,9 @@ def delete_tag(base_url: str, auth: Optional[AuthBase], tag: str, hash_: str, ss
     :param hash_: tag hash
     :param ssl_verify: ignore ssl errors if False
     """
+    url = _sanitize_url(base_url + "/trees/tag/{}", tag)
     params = {"expectedHash": hash_}
-    _delete(base_url + "/trees/tag/{}".format(quote_plus(tag)), auth, ssl_verify=ssl_verify, params=params)
+    _delete(url, auth, ssl_verify=ssl_verify, params=params)
 
 
 def list_tables(
@@ -219,6 +229,7 @@ def list_tables(
     :param ssl_verify: ignore ssl errors if False
     :return: json list of Nessie table names
     """
+    url = _sanitize_url(base_url + "/trees/tree/{}/entries", ref)
     params = {}
     if max_result_hint:
         params["maxRecords"] = str(max_result_hint)
@@ -228,7 +239,7 @@ def list_tables(
         params["pageToken"] = page_token
     if query_filter:
         params["filter"] = query_filter
-    return cast(list, _get(base_url + "/trees/tree/{}/entries".format(quote_plus(ref)), auth, ssl_verify=ssl_verify, params=params))
+    return cast(list, _get(url, auth, ssl_verify=ssl_verify, params=params))
 
 
 def list_logs(
@@ -253,6 +264,7 @@ def list_logs(
     :param filtering_args: All of the args used to filter the log
     :return: json dict of Nessie logs
     """
+    url = _sanitize_url(base_url + "/trees/tree/{}/log", ref)
     params = filtering_args
     if hash_on_ref:
         params["hashOnRef"] = hash_on_ref
@@ -260,7 +272,7 @@ def list_logs(
         params["maxRecords"] = max_records
     if fetch_all:
         params["fetch"] = "ALL"
-    return cast(dict, _get(base_url + "/trees/tree/{}/log".format(quote_plus(ref)), auth, ssl_verify=ssl_verify, params=filtering_args))
+    return cast(dict, _get(url, auth, ssl_verify=ssl_verify, params=filtering_args))
 
 
 def get_content(
@@ -276,12 +288,11 @@ def get_content(
     :param ssl_verify: ignore ssl errors if False
     :return: json dict of Nessie table
     """
+    url = _sanitize_url(base_url + "/contents/{}", content_key.to_path_string())
     params = {"ref": ref}
     if hash_on_ref:
         params["hashOnRef"] = hash_on_ref
-    return cast(
-        dict, _get(base_url + "/contents/{}".format(quote_plus(content_key.to_path_string())), auth, ssl_verify=ssl_verify, params=params)
-    )
+    return cast(dict, _get(url, auth, ssl_verify=ssl_verify, params=params))
 
 
 def assign_branch(
@@ -296,9 +307,9 @@ def assign_branch(
     :param old_hash: current hash of the branch
     :param ssl_verify: ignore ssl errors if False
     """
-    url = "/trees/branch/{}".format(quote_plus(branch))
+    url = _sanitize_url(base_url + "/trees/branch/{}", branch)
     params = {"expectedHash": old_hash}
-    _put(base_url + url, auth, assign_to_json, ssl_verify=ssl_verify, params=params)
+    _put(url, auth, assign_to_json, ssl_verify=ssl_verify, params=params)
 
 
 def assign_tag(
@@ -313,9 +324,9 @@ def assign_tag(
     :param old_hash: current hash of the tag
     :param ssl_verify: ignore ssl errors if False
     """
-    url = "/trees/tag/{}".format(quote_plus(tag))
+    url = _sanitize_url(base_url + "/trees/tag/{}", tag)
     params = {"expectedHash": old_hash}
-    _put(base_url + url, auth, assign_to_json, ssl_verify=ssl_verify, params=params)
+    _put(url, auth, assign_to_json, ssl_verify=ssl_verify, params=params)
 
 
 def cherry_pick(
@@ -330,11 +341,11 @@ def cherry_pick(
     :param expected_hash: expected hash of HEAD of branch
     :param ssl_verify: ignore ssl errors if False
     """
-    url = "/trees/branch/{}/transplant".format(quote_plus(branch))
+    url = _sanitize_url(base_url + "/trees/branch/{}/transplant", branch)
     params = {}
     if expected_hash:
         params["expectedHash"] = expected_hash
-    response = _post(base_url + url, auth, json=transplant_json, ssl_verify=ssl_verify, params=params)
+    response = _post(url, auth, json=transplant_json, ssl_verify=ssl_verify, params=params)
     return cast(dict, response)
 
 
@@ -351,11 +362,11 @@ def merge(
     :param ssl_verify: ignore ssl errors if False
     :return: json dict of a merge response
     """
-    url = "/trees/branch/{}/merge".format(quote_plus(branch))
+    url = _sanitize_url(base_url + "/trees/branch/{}/merge", branch)
     params = {}
     if expected_hash:
         params["expectedHash"] = expected_hash
-    response = _post(base_url + url, auth, json=merge_json, ssl_verify=ssl_verify, params=params)
+    response = _post(url, auth, json=merge_json, ssl_verify=ssl_verify, params=params)
     return cast(dict, response)
 
 
@@ -376,9 +387,9 @@ def commit(
     :param expected_hash: expected hash of HEAD of branch
     :param ssl_verify: ignore ssl errors if False
     """
-    url = "/trees/branch/{}/commit".format(quote_plus(branch))
+    url = _sanitize_url(base_url + "/trees/branch/{}/commit", branch)
     params = {"expectedHash": expected_hash}
-    return cast(dict, _post(base_url + url, auth, json=operations, ssl_verify=ssl_verify, params=params))
+    return cast(dict, _post(url, auth, json=operations, ssl_verify=ssl_verify, params=params))
 
 
 def get_diff(
@@ -403,7 +414,5 @@ def get_diff(
     """
     from_hash_on_ref_asterisk = f"*{from_hash_on_ref}" if from_hash_on_ref else ""
     to_hash_on_ref_asterisk = f"*{to_hash_on_ref}" if to_hash_on_ref else ""
-    return cast(
-        dict,
-        _get(f"{base_url}/diffs/{from_ref}{from_hash_on_ref_asterisk}...{to_ref}{to_hash_on_ref_asterisk}", auth, ssl_verify=ssl_verify),
-    )
+    url = _sanitize_url(base_url + "/diffs/{}{}...{}{}", from_ref, from_hash_on_ref_asterisk, to_ref, to_hash_on_ref_asterisk)
+    return cast(dict, _get(url, auth, ssl_verify=ssl_verify))
