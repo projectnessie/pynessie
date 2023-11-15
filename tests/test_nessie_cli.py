@@ -209,6 +209,9 @@ def test_branch() -> None:
     execute_cli_command(["branch", "etl_hash", f"main@{main_hash}"])
     references = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
     assert len(references) == 5
+    execute_cli_command(["branch", "with/slash", f"main@{main_hash}"])
+    references = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
+    assert len(references) == 6
     references = ReferenceSchema().loads(execute_cli_command(["--json", "branch", "-l", "etl"]), many=False)
     assert_that(references.name).is_equal_to("etl")
     references = simplejson.loads(execute_cli_command(["--json", "branch", "-l", "foo"]))
@@ -232,6 +235,7 @@ def test_branch() -> None:
     execute_cli_command(["branch", "-d", "dev", "-c", dev_hash])
     execute_cli_command(["branch", "-d", "etl_hash", "-c", main_hash])
     execute_cli_command(["branch", "-d", "dev_hash"])
+    execute_cli_command(["branch", "-d", "with/slash"])
     references = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
     assert len(references) == 1
 
@@ -255,6 +259,9 @@ def test_tag() -> None:
     execute_cli_command(["tag", "etl-hash-tag", f"main@{main_hash}"])
     references = ReferenceSchema().loads(execute_cli_command(["--json", "tag"]), many=True)
     assert len(references) == 4
+    execute_cli_command(["tag", "with/slash/tag", f"main@{main_hash}"])
+    references = ReferenceSchema().loads(execute_cli_command(["--json", "tag"]), many=True)
+    assert len(references) == 5
     references = ReferenceSchema().loads(execute_cli_command(["--json", "tag", "-l", "etl-tag"]), many=False)
     assert_that(references.name).is_equal_to("etl-tag")
     references = simplejson.loads(execute_cli_command(["--json", "tag", "-l", "foo"]))
@@ -263,6 +270,7 @@ def test_tag() -> None:
     execute_cli_command(["tag", "-d", "etl-hash-tag"])
     execute_cli_command(["tag", "-d", "dev-tag", "-c", main_hash])
     execute_cli_command(["tag", "-d", "dev-hash-tag", "-c", main_hash])
+    execute_cli_command(["tag", "-d", "with/slash/tag", "-c", main_hash])
     references = ReferenceSchema().loads(execute_cli_command(["--json", "tag"]), many=True)
     assert len(references) == 0
     execute_cli_command(["tag", "v1.0"])
@@ -285,39 +293,41 @@ def test_tag() -> None:
 
 
 @pytest.mark.nessieserver
-def test_assign() -> None:
+@pytest.mark.parametrize("branch", [("dev"), ("branch/name"), ("branch/name_env-dev.1")])
+def test_assign(branch: str) -> None:
     """Test assign operation."""
-    execute_cli_command(["branch", "dev"])
-    make_commit("assign_foo_bar", _new_table(), "dev")
-    execute_cli_command(["branch", "main", "dev", "--force"])
+    execute_cli_command(["branch", branch])
+    make_commit("assign_foo_bar", _new_table(), branch)
+    execute_cli_command(["branch", "main", branch, "--force"])
     branches = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
     refs = {i.name: i.hash_ for i in branches}
-    assert refs["main"] == refs["dev"]
+    assert refs["main"] == refs[branch]
     execute_cli_command(["tag", "v1.0", "main"])
     tags = {i.name: i.hash_ for i in ReferenceSchema().loads(execute_cli_command(["--json", "tag"]), many=True)}
     assert tags["v1.0"] == refs["main"]
-    execute_cli_command(["tag", "v1.0", "dev", "--force"])
+    execute_cli_command(["tag", "v1.0", branch, "--force"])
     tags = {i.name: i.hash_ for i in ReferenceSchema().loads(execute_cli_command(["--json", "tag"]), many=True)}
-    assert tags["v1.0"] == refs["dev"]
+    assert tags["v1.0"] == refs[branch]
 
 
 @pytest.mark.nessieserver
-def test_merge() -> None:
+@pytest.mark.parametrize("branch", [("dev"), ("branch/name"), ("branch/name_env-dev.1")])
+def test_merge(branch: str) -> None:
     """Test merge operation."""
     make_commit("initial_commit", _new_table(), "main", message="Initial commit")
     initial_hash = ref_hash("main")
-    execute_cli_command(["branch", "dev"])
-    make_commit("merge_foo_bar", _new_table(), "dev")
+    execute_cli_command(["branch", branch])
+    make_commit("merge_foo_bar", _new_table(), branch)
     main_hash = ref_hash("main")
-    dev_hash = ref_hash("dev")
+    branch_hash = ref_hash(branch)
 
-    merge_output = execute_cli_command(["merge", "dev", "-c", main_hash])
+    merge_output = execute_cli_command(["merge", branch, "-c", main_hash])
 
     branches = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
     refs = {i.name: i.hash_ for i in branches}
 
     expected_output_list = [
-        f"Merged dev onto main (was on {main_hash} before merge)",
+        f"Merged {branch} onto main (was on {main_hash} before merge)",
         f"Identified merge base commit {initial_hash}",
         f"Resultant hash on main after merge: {refs['main']}",
     ]
@@ -325,10 +335,10 @@ def test_merge() -> None:
 
     # If we try to merge again from dev to main we get an error.
     # This is because there is nothing more to merge.
-    merge_output = execute_cli_command(["merge", "dev", "-c", refs["main"]])
+    merge_output = execute_cli_command(["merge", branch, "-c", refs["main"]])
     expected_output_list = [
-        f"Nothing merged from dev onto main (still on {refs['main']})",
-        f"Identified merge base commit {dev_hash}",
+        f"Nothing merged from {branch} onto main (still on {refs['main']})",
+        f"Identified merge base commit {branch_hash}",
         f"Current, unchanged hash on main after merge: {refs['main']}",
     ]
     assert_that(merge_output.splitlines()).is_equal_to(expected_output_list)
@@ -337,24 +347,25 @@ def test_merge() -> None:
     # we don't check for equality of hashes here because a merge
     # produces a different commit hash on the target branch
     assert_that(logs).is_length(2)
-    assert_that(logs[0]["message"]).starts_with("Merged dev at ")
-    logs = simplejson.loads(execute_cli_command(["--json", "log", "dev"]))
+    assert_that(logs[0]["message"]).starts_with(f"Merged {branch} at ")
+    logs = simplejson.loads(execute_cli_command(["--json", "log", branch]))
     assert_that(logs).is_length(2)
 
 
 @pytest.mark.nessieserver
-def test_merge_json() -> None:
+@pytest.mark.parametrize("branch", [("dev"), ("branch/name"), ("branch/name_env-dev.1")])
+def test_merge_json(branch: str) -> None:
     """Test merge operation."""
     make_commit("initial_commit", _new_table(), "main", message="Initial commit")
-    execute_cli_command(["branch", "dev"])
-    make_commit("merge_foo_bar", _new_table(), "dev")
+    execute_cli_command(["branch", branch])
+    make_commit("merge_foo_bar", _new_table(), branch)
     main_hash = ref_hash("main")
-    dev_hash = ref_hash("dev")
+    branch_hash = ref_hash(branch)
 
     # Passing detached commit-id plus a _different_ hash-on-ref --> error
-    execute_cli_command(["merge", f"dev@{dev_hash}", "-c", main_hash, "-o", main_hash], ret_val=1)
+    execute_cli_command(["merge", f"{branch}@{branch_hash}", "-c", main_hash, "-o", main_hash], ret_val=1)
 
-    merge_output = execute_cli_command(["--json", "merge", "dev", "-c", main_hash])
+    merge_output = execute_cli_command(["--json", "merge", branch, "-c", main_hash])
     merge_response = MergeResponseSchema().loads(merge_output)
 
     # Check merge response
@@ -367,31 +378,32 @@ def test_merge_json() -> None:
     # we don't check for equality of hashes here because a merge
     # produces a different commit hash on the target branch
     assert_that(logs).is_length(2)
-    assert_that(logs[0]["message"]).starts_with("Merged dev at ")
-    logs = simplejson.loads(execute_cli_command(["--json", "log", "dev"]))
+    assert_that(logs[0]["message"]).starts_with(f"Merged {branch} at ")
+    logs = simplejson.loads(execute_cli_command(["--json", "log", branch]))
     assert_that(logs).is_length(2)
 
 
 @pytest.mark.nessieserver
-def test_merge_detached() -> None:
+@pytest.mark.parametrize("branch", [("dev"), ("branch/name"), ("branch/name_env-dev.1")])
+def test_merge_detached(branch: str) -> None:
     """Test merge operation."""
     make_commit("initial_commit", _new_table(), "main", message="Initial commit")
     initial_hash = ref_hash("main")
-    execute_cli_command(["branch", "dev"])
-    make_commit("merge_foo_bar", _new_table(), "dev")
+    execute_cli_command(["branch", branch])
+    make_commit("merge_foo_bar", _new_table(), branch)
     main_hash = ref_hash("main")
-    dev_hash = ref_hash("dev")
+    branch_hash = ref_hash(branch)
 
     # Passing detached commit-id plus a _different_ hash-on-ref --> error
-    execute_cli_command(["merge", dev_hash, "-c", main_hash, "-o", main_hash], ret_val=1)
+    execute_cli_command(["merge", branch_hash, "-c", main_hash, "-o", main_hash], ret_val=1)
 
-    merge_output = execute_cli_command(["merge", "dev", "-c", main_hash])
+    merge_output = execute_cli_command(["merge", branch, "-c", main_hash])
 
     branches = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
     refs = {i.name: i.hash_ for i in branches}
 
     expected_output_list = [
-        f"Merged dev onto main (was on {main_hash} before merge)",
+        f"Merged {branch} onto main (was on {main_hash} before merge)",
         f"Identified merge base commit {initial_hash}",
         f"Resultant hash on main after merge: {refs['main']}",
     ]
@@ -401,24 +413,25 @@ def test_merge_detached() -> None:
     # we don't check for equality of hashes here because a merge
     # produces a different commit hash on the target branch
     assert_that(logs).is_length(2)
-    assert_that(logs[0]["message"]).starts_with("Merged dev at ")
-    logs = simplejson.loads(execute_cli_command(["--json", "log", "dev"]))
+    assert_that(logs[0]["message"]).starts_with(f"Merged {branch} at ")
+    logs = simplejson.loads(execute_cli_command(["--json", "log", branch]))
     assert_that(logs).is_length(2)
 
 
 @pytest.mark.nessieserver
-def test_merge_detached_json() -> None:
+@pytest.mark.parametrize("branch", [("dev"), ("branch/name"), ("branch/name_env-dev.1")])
+def test_merge_detached_json(branch: str) -> None:
     """Test merge operation."""
     make_commit("initial_commit", _new_table(), "main", message="Initial commit")
-    execute_cli_command(["branch", "dev"])
-    make_commit("merge_foo_bar", _new_table(), "dev")
+    execute_cli_command(["branch", branch])
+    make_commit("merge_foo_bar", _new_table(), branch)
     main_hash = ref_hash("main")
-    dev_hash = ref_hash("dev")
+    branch_hash = ref_hash(branch)
 
     # Passing detached commit-id plus a _different_ hash-on-ref --> error
-    execute_cli_command(["merge", dev_hash, "-c", main_hash, "-o", main_hash], ret_val=1)
+    execute_cli_command(["merge", branch_hash, "-c", main_hash, "-o", main_hash], ret_val=1)
 
-    merge_output = execute_cli_command(["--json", "merge", dev_hash, "-c", main_hash])
+    merge_output = execute_cli_command(["--json", "merge", branch_hash, "-c", main_hash])
     merge_response = MergeResponseSchema().loads(merge_output)
 
     # Check merge response
@@ -432,21 +445,22 @@ def test_merge_detached_json() -> None:
     # produces a different commit hash on the target branch
     assert_that(logs).is_length(2)
     assert_that(logs[0]["message"]).starts_with("Merged DETACHED at ")
-    logs = simplejson.loads(execute_cli_command(["--json", "log", "dev"]))
+    logs = simplejson.loads(execute_cli_command(["--json", "log", branch]))
     assert_that(logs).is_length(2)
 
 
 @pytest.mark.nessieserver
-def test_transplant() -> None:
+@pytest.mark.parametrize("branch", [("dev"), ("branch/name"), ("branch/name_env-dev.1")])
+def test_transplant(branch: str) -> None:
     """Test transplant operation."""
-    execute_cli_command(["branch", "dev"])
-    make_commit("transplant_foo_bar", _new_table(), "dev", message="commit 1")
-    make_commit("bar_bar", _new_table(), "dev", message="commit 2")
-    make_commit("foo_baz", _new_table(), "dev", message="commit 3")
+    execute_cli_command(["branch", branch])
+    make_commit("transplant_foo_bar", _new_table(), branch, message="commit 1")
+    make_commit("bar_bar", _new_table(), branch, message="commit 2")
+    make_commit("foo_baz", _new_table(), branch, message="commit 3")
     main_hash = ref_hash("main")
-    logs = simplejson.loads(execute_cli_command(["--json", "log", "dev"]))
+    logs = simplejson.loads(execute_cli_command(["--json", "log", branch]))
     first_hash = [i["hash"] for i in logs]
-    merge_output = execute_cli_command(["cherry-pick", "-c", main_hash, "-s", "dev", first_hash[1], first_hash[0]])
+    merge_output = execute_cli_command(["cherry-pick", "-c", main_hash, "-s", branch, first_hash[1], first_hash[0]])
 
     branches = ReferenceSchema().loads(execute_cli_command(["--json", "branch"]), many=True)
     refs = {i.name: i.hash_ for i in branches}
@@ -464,16 +478,15 @@ def test_transplant() -> None:
 
 
 @pytest.mark.nessieserver
-def test_diff() -> None:
+@pytest.mark.parametrize("branch,content_key", [("dev_test_diff", "diff_foo_dev"), ("dev/test/diff", "diff/foo/bar")])
+def test_diff(branch: str, content_key: str) -> None:
     """Test log and log filtering."""
     diff = DiffResponseSchema().loads(execute_cli_command(["--json", "diff", "main", "main"]))
     main_hash = ref_hash("main")
     assert_that(diff).is_not_none()
     assert_that(diff.diffs).is_empty()
-    branch = "dev_test_diff"
     execute_cli_command(["branch", branch])
     table = _new_table()
-    content_key = "diff_foo_dev"
     make_commit(content_key, table, branch, author="nessie_user1")
     branch_hash = ref_hash(branch)
 
