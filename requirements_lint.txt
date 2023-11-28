@@ -26,5 +26,5 @@ flake8-isort==6.1.1
 isort==5.12.0
 mypy==1.7.1
 pytest-mypy==0.10.3
-pylint==2.17.7
-pylintfileheader==0.3.3
+pylint==3.0.2
+pylintfileheader==1.0.0
