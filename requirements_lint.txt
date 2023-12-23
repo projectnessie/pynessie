@@ -24,7 +24,7 @@ flake8-bugbear==23.12.2
 flake8-docstrings==1.7.0
 flake8-isort==6.1.1
 isort==5.13.2
-mypy==1.7.1
+mypy==1.8.0
 pytest-mypy==0.10.3
 pylint==3.0.3
 pylintfileheader==1.0.0
