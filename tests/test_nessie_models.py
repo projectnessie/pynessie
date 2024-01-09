@@ -31,15 +31,20 @@ def test_content_key_from_path_string() -> None:
     """Test ContentKey.from_path_string method."""
     assert_that(ContentKey.from_path_string("a.b.c")).is_equal_to(ContentKey(["a", "b", "c"]))
     assert_that(ContentKey.from_path_string("a.b.c\00d")).is_equal_to(ContentKey(["a", "b", "c.d"]))
+    assert_that(ContentKey.from_path_string("a.b.c\x1dd")).is_equal_to(ContentKey(["a", "b", "c.d"]))
     assert_that(ContentKey.from_path_string("a\00b.c.d")).is_equal_to(ContentKey(["a.b", "c", "d"]))
+    assert_that(ContentKey.from_path_string("a\x1db.c.d")).is_equal_to(ContentKey(["a.b", "c", "d"]))
     assert_that(ContentKey.from_path_string("a\00b.c.d\00e")).is_equal_to(ContentKey(["a.b", "c", "d.e"]))
+    assert_that(ContentKey.from_path_string("a\x1db.c.d\x1de")).is_equal_to(ContentKey(["a.b", "c", "d.e"]))
+    assert_that(ContentKey.from_path_string("a\x1db.c.d\00e")).is_equal_to(ContentKey(["a.b", "c", "d.e"]))
     assert_that(ContentKey.from_path_string("a.b\00c.d")).is_equal_to(ContentKey(["a", "b.c", "d"]))
+    assert_that(ContentKey.from_path_string("a.b\x1dc.d")).is_equal_to(ContentKey(["a", "b.c", "d"]))
 
 
 def test_content_key_to_path_string() -> None:
     """Test ContentKey.to_path_string method."""
     assert_that(ContentKey(["a", "b", "c"]).to_path_string()).is_equal_to("a.b.c")
-    assert_that(ContentKey(["a", "b", "c.d"]).to_path_string()).is_equal_to("a.b.c\00d")
-    assert_that(ContentKey(["a.b", "c", "d"]).to_path_string()).is_equal_to("a\00b.c.d")
-    assert_that(ContentKey(["a.b", "c", "d.e"]).to_path_string()).is_equal_to("a\00b.c.d\00e")
-    assert_that(ContentKey(["a", "b.c", "d"]).to_path_string()).is_equal_to("a.b\00c.d")
+    assert_that(ContentKey(["a", "b", "c.d"]).to_path_string()).is_equal_to("a.b.c\x1dd")
+    assert_that(ContentKey(["a.b", "c", "d"]).to_path_string()).is_equal_to("a\x1db.c.d")
+    assert_that(ContentKey(["a.b", "c", "d.e"]).to_path_string()).is_equal_to("a\x1db.c.d\x1de")
+    assert_that(ContentKey(["a", "b.c", "d"]).to_path_string()).is_equal_to("a.b\x1dc.d")

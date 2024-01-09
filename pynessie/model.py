@@ -165,7 +165,7 @@ class ContentKey:
         """Convert this key to a url encoded path string."""
         # false positives in pylint
         # pylint: disable=E1133
-        return ".".join(i.replace(".", "\00") if i else "" for i in self.elements)
+        return ".".join(i.replace(".", "\x1d").replace("\00", "\x1d") if i else "" for i in self.elements)
 
     @staticmethod
     def from_path_string(key: str) -> "ContentKey":
@@ -179,13 +179,13 @@ class ContentKey:
         regex = re.compile('"[^"]*"')
 
         # Replace any dot that is inside double quotes with null char '\00' and remove the double quotes
-        key_with_null = regex.sub(lambda x: x.group(0).replace(".", "\00").replace('"', ""), raw_key)
+        key_with_null = regex.sub(lambda x: x.group(0).replace(".", "\x1d").replace('"', ""), raw_key)
 
         # Split based on the dot
         splitted_key = key_with_null.split(".")
 
         # Return back the splitted elements and make sure to change back '/0' to '.'
-        return [i.replace("\00", ".") for i in splitted_key]
+        return [i.replace("\x1d", ".").replace("\00", ".") for i in splitted_key]
 
 
 ContentKeySchema = desert.schema_class(ContentKey)
