@@ -32,10 +32,10 @@ __RE_REFERENCE_WITH_HASH: re.Pattern = re.compile(f"^({__RE_REFERENCE_NAME_RAW})
 
 DETACHED_REFERENCE_NAME = "DETACHED"
 
-CONTENT_ICEBERG_TABLE_NAME = "ICEBERG_TABLE"
-CONTENT_DELTA_LAKE_TABLE_NAME = "DELTA_LAKE_TABLE"
-CONTENT_ICEBERG_VIEW_NAME = "ICEBERG_VIEW"
-CONTENT_NAMESPACE_NAME = "NAMESPACE"
+ICEBERG_TABLE_TYPE_NAME = "ICEBERG_TABLE"
+DELTA_LAKE_TABLE_TYPE_NAME = "DELTA_LAKE_TABLE"
+ICEBERG_VIEW_TYPE_NAME = "ICEBERG_VIEW"
+NAMESPACE_NAME = "NAMESPACE"
 
 
 def is_valid_reference_name(ref: str) -> bool:
@@ -151,22 +151,22 @@ class ContentSchema(OneOfSchema):
     """Schema for Nessie Content."""
 
     type_schemas = {
-        CONTENT_ICEBERG_TABLE_NAME: IcebergTableSchema,
-        CONTENT_DELTA_LAKE_TABLE_NAME: DeltaLakeTableSchema,
-        CONTENT_ICEBERG_VIEW_NAME: IcebergViewSchema,
-        CONTENT_NAMESPACE_NAME: NamespaceSchema,
+        ICEBERG_TABLE_TYPE_NAME: IcebergTableSchema,
+        DELTA_LAKE_TABLE_TYPE_NAME: DeltaLakeTableSchema,
+        ICEBERG_VIEW_TYPE_NAME: IcebergViewSchema,
+        NAMESPACE_NAME: NamespaceSchema,
     }
 
     def get_obj_type(self, obj: Content) -> str:
         """Returns the object type based on its class."""
         if isinstance(obj, IcebergTable):
-            return CONTENT_ICEBERG_TABLE_NAME
+            return ICEBERG_TABLE_TYPE_NAME
         if isinstance(obj, DeltaLakeTable):
-            return CONTENT_DELTA_LAKE_TABLE_NAME
+            return DELTA_LAKE_TABLE_TYPE_NAME
         if isinstance(obj, IcebergView):
-            return CONTENT_ICEBERG_VIEW_NAME
+            return ICEBERG_VIEW_TYPE_NAME
         if isinstance(obj, Namespace):
-            return CONTENT_NAMESPACE_NAME
+            return NAMESPACE_NAME
 
         raise ValueError("Unknown object type: {}".format(obj.__class__.__name__))
 
