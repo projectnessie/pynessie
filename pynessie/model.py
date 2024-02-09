@@ -32,6 +32,11 @@ __RE_REFERENCE_WITH_HASH: re.Pattern = re.compile(f"^({__RE_REFERENCE_NAME_RAW})
 
 DETACHED_REFERENCE_NAME = "DETACHED"
 
+ICEBERG_TABLE_TYPE_NAME = "ICEBERG_TABLE"
+DELTA_LAKE_TABLE_TYPE_NAME = "DELTA_LAKE_TABLE"
+ICEBERG_VIEW_TYPE_NAME = "ICEBERG_VIEW"
+NAMESPACE_TYPE_NAME = "NAMESPACE"
+
 
 def is_valid_reference_name(ref: str) -> bool:
     """Checks whether 'ref' is a valid reference name."""
@@ -128,23 +133,41 @@ class IcebergView(Content):
 IcebergViewSchema = desert.schema_class(IcebergView)
 
 
+@attr.dataclass
+class Namespace(Content):
+    """Dataclass for Nessie Namespace."""
+
+    elements: List[str] = desert.ib(fields.List(fields.Str(data_key="elements")))
+
+    def pretty_print(self) -> str:
+        """Print out for cli."""
+        elements = "\n\t\t".join(self.elements)
+        return "Namespace\n\telements: {}".format(elements)
+
+
+NamespaceSchema = desert.schema_class(Namespace)
+
+
 class ContentSchema(OneOfSchema):
     """Schema for Nessie Content."""
 
     type_schemas = {
-        "ICEBERG_TABLE": IcebergTableSchema,
-        "DELTA_LAKE_TABLE": DeltaLakeTableSchema,
-        "ICEBERG_VIEW": IcebergViewSchema,
+        ICEBERG_TABLE_TYPE_NAME: IcebergTableSchema,
+        DELTA_LAKE_TABLE_TYPE_NAME: DeltaLakeTableSchema,
+        ICEBERG_VIEW_TYPE_NAME: IcebergViewSchema,
+        NAMESPACE_TYPE_NAME: NamespaceSchema,
     }
 
     def get_obj_type(self, obj: Content) -> str:
         """Returns the object type based on its class."""
         if isinstance(obj, IcebergTable):
-            return "ICEBERG_TABLE"
+            return ICEBERG_TABLE_TYPE_NAME
         if isinstance(obj, DeltaLakeTable):
-            return "DELTA_LAKE_TABLE"
+            return DELTA_LAKE_TABLE_TYPE_NAME
         if isinstance(obj, IcebergView):
-            return "ICEBERG_VIEW"
+            return ICEBERG_VIEW_TYPE_NAME
+        if isinstance(obj, Namespace):
+            return NAMESPACE_TYPE_NAME
 
         raise ValueError("Unknown object type: {}".format(obj.__class__.__name__))
 
