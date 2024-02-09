@@ -137,7 +137,7 @@ IcebergViewSchema = desert.schema_class(IcebergView)
 class Namespace(Content):
     """Dataclass for Nessie Namespace."""
 
-    elements: list[str] = desert.ib(fields.List(fields.Str(data_key="elements")))
+    elements: List[str] = desert.ib(fields.List(fields.Str(data_key="elements")))
 
     def pretty_print(self) -> str:
         """Print out for cli."""
