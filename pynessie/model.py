@@ -141,7 +141,8 @@ class Namespace(Content):
 
     def pretty_print(self) -> str:
         """Print out for cli."""
-        return "Namespace"
+        elements = "\n\t\t".join(self.elements)
+        return "Namespace\n\telements: {}".format(elements)
 
 
 NamespaceSchema = desert.schema_class(Namespace)
