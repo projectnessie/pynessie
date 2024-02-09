@@ -32,6 +32,11 @@ __RE_REFERENCE_WITH_HASH: re.Pattern = re.compile(f"^({__RE_REFERENCE_NAME_RAW})
 
 DETACHED_REFERENCE_NAME = "DETACHED"
 
+CONTENT_ICEBERG_TABLE_NAME = "ICEBERG_TABLE"
+CONTENT_DELTA_LAKE_TABLE_NAME = "DELTA_LAKE_TABLE"
+CONTENT_ICEBERG_VIEW_NAME = "ICEBERG_VIEW"
+CONTENT_NAMESPACE_NAME = "NAMESPACE"
+
 
 def is_valid_reference_name(ref: str) -> bool:
     """Checks whether 'ref' is a valid reference name."""
@@ -128,23 +133,40 @@ class IcebergView(Content):
 IcebergViewSchema = desert.schema_class(IcebergView)
 
 
+@attr.dataclass
+class Namespace(Content):
+    """Dataclass for Nessie Namespace."""
+
+    elements: list[str] = desert.ib(fields.List(fields.Str(data_key="elements")))
+
+    def pretty_print(self) -> str:
+        """Print out for cli."""
+        return "Namespace"
+
+
+NamespaceSchema = desert.schema_class(Namespace)
+
+
 class ContentSchema(OneOfSchema):
     """Schema for Nessie Content."""
 
     type_schemas = {
-        "ICEBERG_TABLE": IcebergTableSchema,
-        "DELTA_LAKE_TABLE": DeltaLakeTableSchema,
-        "ICEBERG_VIEW": IcebergViewSchema,
+        CONTENT_ICEBERG_TABLE_NAME: IcebergTableSchema,
+        CONTENT_DELTA_LAKE_TABLE_NAME: DeltaLakeTableSchema,
+        CONTENT_ICEBERG_VIEW_NAME: IcebergViewSchema,
+        CONTENT_NAMESPACE_NAME: NamespaceSchema,
     }
 
     def get_obj_type(self, obj: Content) -> str:
         """Returns the object type based on its class."""
         if isinstance(obj, IcebergTable):
-            return "ICEBERG_TABLE"
+            return CONTENT_ICEBERG_TABLE_NAME
         if isinstance(obj, DeltaLakeTable):
-            return "DELTA_LAKE_TABLE"
+            return CONTENT_DELTA_LAKE_TABLE_NAME
         if isinstance(obj, IcebergView):
-            return "ICEBERG_VIEW"
+            return CONTENT_ICEBERG_VIEW_NAME
+        if isinstance(obj, Namespace):
+            return CONTENT_NAMESPACE_NAME
 
         raise ValueError("Unknown object type: {}".format(obj.__class__.__name__))
 
