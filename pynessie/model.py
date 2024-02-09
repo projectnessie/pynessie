@@ -35,7 +35,7 @@ DETACHED_REFERENCE_NAME = "DETACHED"
 ICEBERG_TABLE_TYPE_NAME = "ICEBERG_TABLE"
 DELTA_LAKE_TABLE_TYPE_NAME = "DELTA_LAKE_TABLE"
 ICEBERG_VIEW_TYPE_NAME = "ICEBERG_VIEW"
-NAMESPACE_NAME = "NAMESPACE"
+NAMESPACE_TYPE_NAME = "NAMESPACE"
 
 
 def is_valid_reference_name(ref: str) -> bool:
@@ -155,7 +155,7 @@ class ContentSchema(OneOfSchema):
         ICEBERG_TABLE_TYPE_NAME: IcebergTableSchema,
         DELTA_LAKE_TABLE_TYPE_NAME: DeltaLakeTableSchema,
         ICEBERG_VIEW_TYPE_NAME: IcebergViewSchema,
-        NAMESPACE_NAME: NamespaceSchema,
+        NAMESPACE_TYPE_NAME: NamespaceSchema,
     }
 
     def get_obj_type(self, obj: Content) -> str:
@@ -167,7 +167,7 @@ class ContentSchema(OneOfSchema):
         if isinstance(obj, IcebergView):
             return ICEBERG_VIEW_TYPE_NAME
         if isinstance(obj, Namespace):
-            return NAMESPACE_NAME
+            return NAMESPACE_TYPE_NAME
 
         raise ValueError("Unknown object type: {}".format(obj.__class__.__name__))
 
