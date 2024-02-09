@@ -53,6 +53,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
     description="Project Nessie: Transactional Catalog for Data Lakes with Git-like semantics",
     entry_points={

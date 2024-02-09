@@ -41,7 +41,7 @@ jobs:
       NESSIE_TEST_IMAGE: 'ghcr.io/projectnessie/nessie:latest'
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11'] # 3.8 first, it has "all the tox envs"
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12'] # 3.8 first, it has "all the tox envs"
     steps:
       - uses: actions/checkout@v4.1.1
       - name: Setup Python
