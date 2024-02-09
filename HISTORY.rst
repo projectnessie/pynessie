@@ -2,6 +2,11 @@
 History
 =======
 
+0.67.0 (2024-02-09)
+-------------------
+
+* See release notes and changelog on GitHub: https://github.com/projectnessie/pynessie/releases/tag/nessie-0.67.0
+
 0.66.0 (2024-01-09)
 -------------------
 
