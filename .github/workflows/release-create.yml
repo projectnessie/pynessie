@@ -58,7 +58,7 @@ jobs:
 
     ### BEGIN runner setup
     - name: Checkout
-      uses: actions/checkout@v4.1.4
+      uses: actions/checkout@v4.1.5
       with:
         ref: ${{ env.RELEASE_FROM }}
         fetch-depth: '0'
