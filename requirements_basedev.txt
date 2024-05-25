@@ -26,5 +26,5 @@ pytest-mock==3.14.0
 testcontainers==3.7.1
 tox==4.15.0
 twine==5.1.0
-watchdog==4.0.0
+watchdog==4.0.1
 wheel==0.43.0
