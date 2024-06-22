@@ -21,6 +21,6 @@ desert==2022.9.22
 marshmallow==3.21.3
 marshmallow_oneofschema==3.0.1
 python-dateutil==2.9.0.post0
-requests==2.32.2
+requests==2.32.3
 requests-aws4auth==1.2.3
 simplejson==3.19.2
