@@ -36,7 +36,7 @@ jobs:
   # Test against latest Nessie release against the Python version matrix
   python:
     name: CI Python
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     env:
       NESSIE_TEST_IMAGE: 'ghcr.io/projectnessie/nessie:latest'
     strategy:
@@ -56,7 +56,7 @@ jobs:
   # Test against various Nessie releases incl SNAPSHOT
   nessie-snapshot:
     name: CI Nessie Image
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         nessie-image:
