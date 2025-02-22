@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-attrs==24.3.0
+attrs==25.1.0
 botocore==1.36.26
 Click==8.1.8
 confuse==2.0.1
