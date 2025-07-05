@@ -530,8 +530,8 @@ class DiffEntry:
     """Dataclass for a Diff."""
 
     content_key: ContentKey = desert.ib(fields.Nested(ContentKeySchema, data_key="key"))
-    from_content: Content = desert.ib(fields.Nested(ContentSchema, default=None, data_key="from", allow_none=True))
-    to_content: Content = desert.ib(fields.Nested(ContentSchema, default=None, data_key="to", allow_none=True))
+    from_content: Content = desert.ib(fields.Nested(ContentSchema, data_key="from", allow_none=True), default=None)
+    to_content: Content = desert.ib(fields.Nested(ContentSchema, data_key="to", allow_none=True), default=None)
 
     def pretty_print(self) -> str:
         """Print out for cli."""
