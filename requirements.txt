@@ -15,7 +15,7 @@
 #
 attrs==24.3.0
 botocore==1.36.26
-Click==8.1.8
+Click==8.4.1
 confuse==2.0.1
 desert==2022.9.22
 marshmallow==3.22.0
