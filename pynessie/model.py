@@ -13,6 +13,7 @@
 # limitations under the License.
 #
 """Nessie Data objects."""
+
 import re
 from datetime import datetime
 from typing import List, Optional, Tuple

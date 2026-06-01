@@ -13,6 +13,7 @@
 # limitations under the License.
 #
 """Config classes for nessie client."""
+
 from io import StringIO
 
 import confuse

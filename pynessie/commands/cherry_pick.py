@@ -64,10 +64,8 @@ def cherry_pick(ctx: ContextObject, ref: str, force: bool, expected_hash: str, s
     with main branch's expected hash '12345678abcdef'
     """
     if not force and not expected_hash:
-        raise UsageError(
-            """Either condition or force must be set. Condition should be set to a valid hash for concurrency
-            control or force to ignore current state of Nessie Store."""
-        )
+        raise UsageError("""Either condition or force must be set. Condition should be set to a valid hash for concurrency
+            control or force to ignore current state of Nessie Store.""")
     merge_response = ctx.nessie.cherry_pick(ref, source_ref, expected_hash, *hashes)
     if ctx.json:
         click.echo(MergeResponseSchema().dumps(merge_response))

@@ -13,14 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-attrs==24.3.0
-botocore==1.36.26
-Click==8.1.8
-confuse==2.0.1
+attrs==26.1.0
+botocore==1.43.18
+Click==8.4.1
+confuse==2.2.0
 desert==2022.9.22
-marshmallow==3.22.0
-marshmallow_oneofschema==3.0.1
+marshmallow==3.26.2
+marshmallow_oneofschema==3.2.0
 python-dateutil==2.9.0.post0
-requests==2.32.3
-requests-aws4auth==1.3.1
-simplejson==3.20.1
+requests==2.33.0
+requests-aws4auth==1.3.2

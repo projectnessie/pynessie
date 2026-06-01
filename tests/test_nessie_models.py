@@ -13,6 +13,7 @@
 # limitations under the License.
 #
 """Test Nessie models."""
+
 from assertpy import assert_that
 
 from pynessie.model import ContentKey

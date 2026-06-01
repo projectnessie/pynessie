@@ -13,6 +13,7 @@
 # limitations under the License.
 #
 """Bearer auth for Nessie client."""
+
 from requests import models
 from requests.auth import AuthBase
 

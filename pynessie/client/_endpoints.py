@@ -15,12 +15,12 @@
 
 """Direct API operations on Nessie with requests."""
 
+import json as jsonlib
 import os
 from typing import Any, Optional, Union, cast
 from urllib.parse import quote
 
 import requests
-import simplejson as jsonlib
 from requests.auth import AuthBase
 
 from pynessie.error import _create_exception

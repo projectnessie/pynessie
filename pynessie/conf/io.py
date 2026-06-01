@@ -13,6 +13,7 @@
 # limitations under the License.
 #
 """IO methods to read and write config."""
+
 import os
 
 import confuse

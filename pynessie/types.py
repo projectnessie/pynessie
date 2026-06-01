@@ -13,6 +13,7 @@
 # limitations under the License.
 #
 """Custom types that can be used with click."""
+
 from typing import Any, Optional
 
 import click

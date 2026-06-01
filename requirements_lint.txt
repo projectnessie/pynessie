@@ -13,18 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
--r requirements_dev.txt
-bandit==1.7.10
-black==24.8.0
-flake8==7.1.2
-flake8-annotations==3.1.1
+-r requirements_basedev.txt
+bandit==1.9.4
+black==26.3.1
+flake8==7.3.0
+flake8-annotations==3.2.0
 flake8-bandit==4.1.1
-flake8-black==0.3.6
-flake8-bugbear==24.12.12
+flake8-black==0.4.0
+flake8-bugbear==25.11.29
 flake8-docstrings==1.7.0
-flake8-isort==6.1.1
-isort==5.13.2
-mypy==1.14.1
-pytest-mypy==0.10.3
-pylint==3.2.7
-pylintfileheader==1.0.0
+flake8-isort==7.0.0
+isort==8.0.1
+mypy==2.1.0
+pytest-mypy==1.0.1
+pylint==4.0.5
+pylintfileheader==1.1.0

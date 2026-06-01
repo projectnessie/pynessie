@@ -14,7 +14,6 @@
 
 """The purpose of this module is to provide different functions that can produce CEL Expressions based on given filtering parameters."""
 
-
 from datetime import timezone
 from typing import List, Optional
 

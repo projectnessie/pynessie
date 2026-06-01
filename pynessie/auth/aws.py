@@ -13,6 +13,7 @@
 # limitations under the License.
 #
 """Use AWS4Auth and botocore to fetch credentials and sign requests."""
+
 from typing import Optional
 
 from botocore.credentials import get_credentials

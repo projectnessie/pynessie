@@ -29,31 +29,30 @@ requirements = [
     "attrs",  # features we use are not regularly changing
     "botocore",  # features we use are not regularly changing
     "Click<9.0.0,>6.0.0",  # pinning to 7.x or 8.x as we have used w/ both
-    "confuse==2.0.1",  # important for config so don't change w/o testing
+    "confuse==2.2.0",  # important for config so don't change w/o testing
     "desert",  # features we use are not regularly changing
     "marshmallow",  # features we use are not regularly changing
     "marshmallow_oneofschema",  # features we use are not regularly changing
     "python-dateutil",  # stable
     "requests",  # stable
     "requests-aws4auth",  # stable
-    "simplejson",  # stable
 ]
 
 setup(
     author="Ryan Murray",
     author_email="nessie-release-builder@dremio.com",
-    python_requires=">=3.8",
+    python_requires=">=3.11",
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",
         "Natural Language :: English",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
+        "Programming Language :: Python :: 3.15",
     ],
     description="Project Nessie: Transactional Catalog for Data Lakes with Git-like semantics",
     entry_points={

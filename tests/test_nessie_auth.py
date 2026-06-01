@@ -65,14 +65,12 @@ def test_aws_auth() -> None:
 def test_aws_auth_profile(tmp_path: Path) -> None:
     """Makes sure the request is signed according to AWS auth requirements."""
     aws_credentials = tmp_path / "aws.config"
-    aws_credentials.write_text(
-        """
+    aws_credentials.write_text("""
 [test1]
 aws_access_key_id=test1_key
 aws_secret_access_key=test1_secret
 aws_session_token=test1_session
-    """
-    )
+    """)
     config = build_config({"auth.type": "aws", "auth.region": "us-west-2", "auth.profile": "test1"})
     os.environ["AWS_SHARED_CREDENTIALS_FILE"] = str(aws_credentials)
     auth = setup_auth(config)

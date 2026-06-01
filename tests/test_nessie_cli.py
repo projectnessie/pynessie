@@ -13,12 +13,13 @@
 # limitations under the License.
 #
 """Tests for `pynessie` package."""
+
 import itertools
+import json as simplejson
 from typing import List
 
 import confuse
 import pytest
-import simplejson
 from assertpy import assert_that
 
 from pynessie import __version__
@@ -48,7 +49,7 @@ from .conftest import (
 @pytest.mark.nessieserver
 def test_command_line_interface() -> None:
     """Test the CLI."""
-    assert "Usage: nessie" in execute_cli_command([])
+    assert "Usage: nessie" in execute_cli_command([], ret_val=2)
     assert "Usage: nessie" in execute_cli_command(["--help"])
     assert __version__ in execute_cli_command(["--version"])
     references = ReferenceSchema().loads(execute_cli_command(["--json", "branch", "-l"]), many=True)

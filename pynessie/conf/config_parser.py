@@ -13,6 +13,7 @@
 # limitations under the License.
 #
 """Parser for confuse Configuration object."""
+
 import os
 from typing import Optional
 
