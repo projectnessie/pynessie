@@ -14,6 +14,7 @@
 #
 
 """Contents Commit Command CLI."""
+
 from json import JSONDecodeError
 from typing import List, Optional
 
@@ -127,6 +128,7 @@ def _get_edit_content_operations(
             continue
 
         # If the user has an invalid JSON, we raise an Error
+        assert content_json is not None
         try:
             content_new = ContentSchema().loads(content_json)
         except JSONDecodeError as e:

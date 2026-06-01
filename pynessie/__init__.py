@@ -13,6 +13,7 @@
 # limitations under the License.
 #
 """Top-level package for Python API and CLI for Nessie."""
+
 import os
 from typing import Optional
 

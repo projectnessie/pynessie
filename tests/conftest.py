@@ -21,11 +21,10 @@ from typing import List, Optional
 
 import attr
 import pytest
-import requests
 from assertpy import assert_that
 from click.testing import CliRunner, Result
 from testcontainers.core.generic import DockerContainer
-from testcontainers.core.waiting_utils import wait_container_is_ready
+from testcontainers.core.wait_strategies import HttpWaitStrategy
 
 from pynessie import cli
 from pynessie.model import Content, ContentSchema, ReferenceSchema
@@ -42,6 +41,7 @@ class NessieContainer(DockerContainer):
         """Nessie test container constructor using the Nessie image tagged as 'latest'."""
         super().__init__(image=image)
         self.with_exposed_ports(NessieContainer.NESSIE_PORT)
+        self.waiting_for(HttpWaitStrategy(NessieContainer.NESSIE_PORT).for_status_code(200))
 
     def get_base_url(self) -> str:
         """Get the root Nessie HTTP URL."""
@@ -52,17 +52,6 @@ class NessieContainer(DockerContainer):
     def get_url(self, api_version: int = 1) -> str:
         """Retrieve the Nessie API URL for the given Nessie API version, defaults to 1."""
         return f"{self.get_base_url()}api/v{api_version}"
-
-    @wait_container_is_ready(requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout)
-    def _connect(self) -> None:
-        response = requests.get(f"{self.get_base_url()}", timeout=1)
-        response.raise_for_status()
-
-    def start(self) -> "NessieContainer":
-        """Starts the Nessie container, waits until Nessie is ready."""
-        super().start()
-        self._connect()
-        return self
 
 
 @attr.dataclass
@@ -128,7 +117,7 @@ def execute_cli_command_raw(args: List[str], input_data: Optional[str] = None, r
 
 def execute_cli_command(args: List[str], input_data: Optional[str] = None, ret_val: int = 0) -> str:
     """Execute a Nessie CLI command and return its STDOUT."""
-    return execute_cli_command_raw(args, input_data=input_data, ret_val=ret_val).stdout
+    return execute_cli_command_raw(args, input_data=input_data, ret_val=ret_val).output
 
 
 def ref_hash(ref: str) -> str:

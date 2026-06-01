@@ -14,6 +14,7 @@
 #
 
 """Contents View Command CLI."""
+
 from typing import List
 
 import click

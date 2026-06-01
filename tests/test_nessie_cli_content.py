@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Tests for `content CLI command`."""
+
+import json as simplejson
 from typing import List, Optional
 
 import pytest
-import simplejson
 from assertpy import assert_that
 
 from pynessie.model import (

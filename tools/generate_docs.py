@@ -13,6 +13,7 @@
 # limitations under the License.
 #
 """Generate pynessie docs script."""
+
 import os
 from pathlib import Path
 from typing import IO, List, Optional

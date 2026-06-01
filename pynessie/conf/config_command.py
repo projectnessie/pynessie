@@ -13,10 +13,10 @@
 # limitations under the License.
 #
 """Execute config command from cli."""
-from typing import Optional, Union, cast
+
+from typing import Any, Optional, Union, cast
 
 import click
-import confuse
 
 from pynessie.conf.config_parser import build_config
 from pynessie.conf.io import write_to_file
@@ -44,11 +44,11 @@ def process(
         write_to_file(config)
         return ""
     if unset_op:
-        config = build_config()
+        unset_config: Any = build_config()
         for k in unset_op.split("."):
-            config = config[k]
-        config.set(None)
-        write_to_file(config.root())
+            unset_config = unset_config[k]
+        unset_config.set(None)
+        write_to_file(unset_config.root())
         return ""
     if list_op:
         config = build_config()
@@ -74,8 +74,8 @@ def _set_type(key: str, type_str: Optional[str]) -> Union[bool, int, str]:
     return key
 
 
-def _get_key(key: str) -> confuse.Configuration:
-    config = build_config()
+def _get_key(key: str) -> Any:
+    config: Any = build_config()
     for i in key.split("."):
         if not i:
             continue

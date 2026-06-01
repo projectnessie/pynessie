@@ -58,14 +58,14 @@ jobs:
 
     ### BEGIN runner setup
     - name: Checkout
-      uses: actions/checkout@v4.1.7
+      uses: actions/checkout@v6
       with:
         ref: ${{ env.RELEASE_FROM }}
         fetch-depth: '0'
     - name: Setup Python
       uses: ./.github/actions/dev-tool-python
       with:
-        python-version: '3.8'
+        python-version: '3.11'
     - name: Install Python dependencies
       run: |
         python3 -m pip install --upgrade pip

@@ -65,10 +65,8 @@ def merge(ctx: ContextObject, ref: str, force: bool, expected_hash: str, hash_on
         nessie merge -f -b main dev -> forcefully merge dev to a branch named main
     """
     if not force and not expected_hash:
-        raise UsageError(
-            """Either condition or force must be set. Condition should be set to a valid hash for concurrency
-            control or force to ignore current state of Nessie Store."""
-        )
+        raise UsageError("""Either condition or force must be set. Condition should be set to a valid hash for concurrency
+            control or force to ignore current state of Nessie Store.""")
     merge_response = ctx.nessie.merge(from_ref, ref, hash_on_ref, expected_hash)
     if ctx.json:
         click.echo(MergeResponseSchema().dumps(merge_response))

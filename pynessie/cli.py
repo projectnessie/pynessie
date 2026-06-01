@@ -13,6 +13,7 @@
 # limitations under the License.
 #
 """Console script for nessie_client."""
+
 import sys
 from typing import Any
 

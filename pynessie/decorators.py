@@ -14,6 +14,7 @@
 #
 
 """Top-level decorators."""
+
 import functools
 import sys
 from typing import Any, Callable

@@ -14,6 +14,7 @@
 #
 
 """Cli Common context functions that can be used by CLI commands/groups."""
+
 from typing import Any, Dict, List, Mapping, Tuple
 
 import attr

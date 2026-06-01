@@ -13,9 +13,9 @@
 # limitations under the License.
 #
 """Nessie Exceptions."""
-from typing import Optional
 
-import simplejson as json
+import json
+from typing import Optional
 
 
 class NessieInvalidUsageException(Exception):

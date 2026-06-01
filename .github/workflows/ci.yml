@@ -41,13 +41,14 @@ jobs:
       NESSIE_TEST_IMAGE: 'ghcr.io/projectnessie/nessie:latest'
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12'] # 3.8 first, it has "all the tox envs"
+        python-version: ['3.11', '3.12', '3.13', '3.14', '3.15'] # 3.11 first, it has lint and safety
     steps:
-      - uses: actions/checkout@v4.1.7
+      - uses: actions/checkout@v6
       - name: Setup Python
         uses: ./.github/actions/dev-tool-python
         with:
           python-version: ${{ matrix.python-version }}
+          allow-prereleases: ${{ matrix.python-version == '3.15' }}
       - name: Test with tox
         run: tox
       - name: Just show images
@@ -63,11 +64,11 @@ jobs:
             - 'ghcr.io/projectnessie/nessie-unstable:latest'
             - 'ghcr.io/projectnessie/nessie:0.63.0'
     steps:
-      - uses: actions/checkout@v4.1.7
+      - uses: actions/checkout@v6
       - name: Setup Python
         uses: ./.github/actions/dev-tool-python
         with:
-          python-version: 3.8
+          python-version: 3.11
       - name: Test with tox
         env:
           NESSIE_TEST_IMAGE: ${{ matrix.nessie-image }}
