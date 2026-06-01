@@ -25,6 +25,6 @@ flake8-docstrings==1.7.0
 flake8-isort==6.1.1
 isort==5.13.2
 mypy==1.14.1
-pytest-mypy==0.10.3
+pytest-mypy==1.0.1
 pylint==3.2.7
 pylintfileheader==1.0.0
