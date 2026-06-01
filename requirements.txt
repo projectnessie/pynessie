@@ -16,7 +16,7 @@
 attrs==24.3.0
 botocore==1.36.26
 Click==8.1.8
-confuse==2.0.1
+confuse==2.2.0
 desert==2022.9.22
 marshmallow==3.22.0
 marshmallow_oneofschema==3.0.1
