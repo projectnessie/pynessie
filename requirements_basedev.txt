@@ -27,4 +27,4 @@ testcontainers==4.15.0
 tox==4.60.0
 twine==6.2.0
 watchdog==6.0.0
-wheel==0.47.0
+wheel==0.48.0
