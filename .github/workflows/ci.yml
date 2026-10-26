@@ -43,7 +43,7 @@ jobs:
       matrix:
         python-version: ['3.11', '3.12', '3.13', '3.14', '3.15'] # 3.11 first, it has lint and safety
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Setup Python
         uses: ./.github/actions/dev-tool-python
         with:
@@ -64,7 +64,7 @@ jobs:
             - 'ghcr.io/projectnessie/nessie-unstable:latest'
             - 'ghcr.io/projectnessie/nessie:0.63.0'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Setup Python
         uses: ./.github/actions/dev-tool-python
         with:
